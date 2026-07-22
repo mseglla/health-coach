@@ -23,6 +23,7 @@ jobs:
       - name: Check JavaScript syntax
         run: |
           node --check js/app.js
+          node --check js/backup.js
           node --check js/state.js
           node --check js/storage.js
           node --check js/calculations.js
