@@ -1,12 +1,14 @@
 {
-  "name": "Health Coach",
-  "short_name": "Coach",
-  "description": "Entrenador personal basat en dades.",
+  "name": "ATLES · Health Coach",
+  "short_name": "ATLES",
+  "description": "Coach personal de salut i pèrdua de pes basat en dades i tendències.",
   "start_url": "./",
+  "scope": "./",
   "display": "standalone",
   "background_color": "#070a12",
   "theme_color": "#070a12",
   "lang": "ca",
+  "categories": ["health", "fitness", "lifestyle"],
   "icons": [
     { "src": "assets/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
   ]
