@@ -1,0 +1,13 @@
+{
+  "name": "Health Coach",
+  "short_name": "Coach",
+  "description": "Entrenador personal basat en dades.",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#070a12",
+  "theme_color": "#070a12",
+  "lang": "ca",
+  "icons": [
+    { "src": "assets/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}

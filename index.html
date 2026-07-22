@@ -1,0 +1,197 @@
+<!doctype html>
+<html lang="ca">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#070a12" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Health Coach" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="icon" href="assets/icon.svg" />
+  <link rel="stylesheet" href="css/tokens.css" />
+  <link rel="stylesheet" href="css/base.css" />
+  <link rel="stylesheet" href="css/components.css" />
+  <link rel="stylesheet" href="css/screens.css" />
+  <title>Health Coach</title>
+</head>
+<body>
+  <div class="app-shell">
+    <main class="app-main">
+      <section id="home" class="screen is-active" aria-labelledby="home-title">
+        <header class="screen-header">
+          <div>
+            <p class="eyebrow">MISSIÓ 85</p>
+            <h1 id="home-title">Hola, <span id="greetingName">Marc</span></h1>
+            <p class="screen-subtitle">La millor decisió per avui.</p>
+          </div>
+          <button class="icon-button" type="button" aria-label="Obrir configuració" data-go="settings">⚙</button>
+        </header>
+
+        <section class="mission-strip" aria-label="Progrés de la missió">
+          <div>
+            <span class="mission-strip__label">Objectiu</span>
+            <strong id="missionGoal">85,0 kg</strong>
+          </div>
+          <div>
+            <span class="mission-strip__label">Data</span>
+            <strong id="missionDate">30 nov.</strong>
+          </div>
+          <div>
+            <span class="mission-strip__label">Restants</span>
+            <strong id="missionDays">— dies</strong>
+          </div>
+        </section>
+
+        <section class="orbit-card" aria-label="Estat del dia">
+          <div class="orbit" id="orbit">
+            <div class="orbit__glow"></div>
+            <svg class="orbit__svg" viewBox="0 0 220 220" role="img" aria-label="Progrés energètic del dia">
+              <circle class="orbit__track" cx="110" cy="110" r="88"></circle>
+              <circle id="orbitProgress" class="orbit__progress" cx="110" cy="110" r="88"></circle>
+              <circle id="orbitActivity" class="orbit__activity" cx="110" cy="110" r="72"></circle>
+            </svg>
+            <div class="orbit__content">
+              <span id="statusPill" class="status-pill status-pill--neutral">SENSE DADES</span>
+              <strong id="balanceToday" class="orbit__value">—</strong>
+              <span class="orbit__unit">kcal</span>
+              <span id="orbitCaption" class="orbit__caption">Registra el dia</span>
+            </div>
+          </div>
+        </section>
+
+        <section class="coach-card">
+          <div class="coach-card__icon">✦</div>
+          <div>
+            <p class="coach-card__label">LA MILLOR DECISIÓ ARA</p>
+            <h2 id="recommendation">Registra el pes i les calories d'avui.</h2>
+          </div>
+        </section>
+
+        <section class="metric-grid" aria-label="Mètriques principals">
+          <article class="metric-card metric-card--weight">
+            <span class="metric-card__label">Pes avui</span>
+            <strong id="weightToday">—</strong>
+            <small id="weightDelta">Sense tendència</small>
+          </article>
+          <article class="metric-card metric-card--avg">
+            <span class="metric-card__label">Mitjana 7 dies</span>
+            <strong id="weightAvg">—</strong>
+            <small id="weightTrend">Esperant dades</small>
+          </article>
+          <article class="metric-card metric-card--intake">
+            <span class="metric-card__label">Ingerides</span>
+            <strong id="intakeToday">0</strong>
+            <small>kcal</small>
+          </article>
+          <article class="metric-card metric-card--burn">
+            <span class="metric-card__label">Gastades</span>
+            <strong id="burnToday">—</strong>
+            <small>kcal estimades</small>
+          </article>
+        </section>
+
+        <button class="primary-action" type="button" data-go="log">
+          <span class="primary-action__icon">＋</span>
+          Registrar avui
+        </button>
+      </section>
+
+      <section id="log" class="screen" aria-labelledby="log-title">
+        <header class="screen-header screen-header--compact">
+          <div>
+            <p class="eyebrow">REGISTRE DIARI</p>
+            <h1 id="log-title">Avui</h1>
+            <p class="screen-subtitle">Menys de 15 segons.</p>
+          </div>
+        </header>
+
+        <form id="dayForm" class="surface-card form-card">
+          <div class="form-grid">
+            <label class="field">
+              <span>Pes</span>
+              <div class="field__control"><input id="weightInput" inputmode="decimal" placeholder="89,2" /><em>kg</em></div>
+            </label>
+            <label class="field">
+              <span>Passos</span>
+              <div class="field__control"><input id="stepsInput" inputmode="numeric" placeholder="8000" /></div>
+            </label>
+          </div>
+          <label class="field">
+            <span>Calories ingerides</span>
+            <div class="field__control"><input id="intakeInput" inputmode="numeric" placeholder="2100" /><em>kcal</em></div>
+          </label>
+          <label class="field">
+            <span>Calories actives</span>
+            <div class="field__control"><input id="activeInput" inputmode="numeric" placeholder="550" /><em>kcal</em></div>
+            <small>Apple Watch o estimació manual, de moment.</small>
+          </label>
+          <button class="button button--primary" type="submit">Guardar el dia</button>
+        </form>
+
+        <section class="surface-card">
+          <div class="section-title-row">
+            <h2>Últims registres</h2>
+            <span class="chip">7 dies</span>
+          </div>
+          <div id="recentEntries" class="entry-list"></div>
+        </section>
+      </section>
+
+      <section id="stats" class="screen" aria-labelledby="stats-title">
+        <header class="screen-header screen-header--compact">
+          <div>
+            <p class="eyebrow">PROGRÉS</p>
+            <h1 id="stats-title">Evolució</h1>
+            <p class="screen-subtitle">Menys soroll, més tendència.</p>
+          </div>
+        </header>
+        <section class="surface-card chart-card">
+          <div class="section-title-row"><h2>Pes</h2><span class="chip">30 dies</span></div>
+          <canvas id="weightChart" width="720" height="300"></canvas>
+        </section>
+        <section class="surface-card chart-card">
+          <div class="section-title-row"><h2>Energia</h2><span class="chart-legend"><i></i>Ingerides <b></b>Gastades</span></div>
+          <canvas id="calorieChart" width="720" height="300"></canvas>
+        </section>
+      </section>
+
+      <section id="settings" class="screen" aria-labelledby="settings-title">
+        <header class="screen-header screen-header--compact">
+          <div>
+            <p class="eyebrow">PERFIL</p>
+            <h1 id="settings-title">Configuració</h1>
+            <p class="screen-subtitle">Estimació inicial, ajustable amb dades reals.</p>
+          </div>
+        </header>
+        <form id="settingsForm" class="surface-card form-card">
+          <label class="field"><span>Nom</span><div class="field__control"><input id="nameSetting" placeholder="Marc" /></div></label>
+          <div class="form-grid">
+            <label class="field"><span>Edat</span><div class="field__control"><input id="ageSetting" inputmode="numeric" /></div></label>
+            <label class="field"><span>Altura</span><div class="field__control"><input id="heightSetting" inputmode="decimal" /><em>cm</em></div></label>
+          </div>
+          <label class="field"><span>Sexe per al càlcul metabòlic</span><div class="field__control"><select id="sexSetting"><option value="male">Home</option><option value="female">Dona</option></select></div></label>
+          <div class="form-grid">
+            <label class="field"><span>Pes objectiu</span><div class="field__control"><input id="goalSetting" inputmode="decimal" /><em>kg</em></div></label>
+            <label class="field"><span>Data objectiu</span><div class="field__control"><input id="dateSetting" type="date" /></div></label>
+          </div>
+          <button class="button button--primary" type="submit">Guardar configuració</button>
+          <button id="exportData" class="button button--ghost" type="button">Exportar dades</button>
+        </form>
+        <p class="legal-note">La despesa és provisional: metabolisme estimat + calories actives. El model es recalibrarà quan acumulem dades i integrem Apple Health.</p>
+      </section>
+    </main>
+
+    <nav class="bottom-nav" aria-label="Navegació principal">
+      <button class="bottom-nav__item is-active" type="button" data-screen="home"><span>⌂</span><small>Avui</small></button>
+      <button class="bottom-nav__item" type="button" data-screen="log"><span>＋</span><small>Registrar</small></button>
+      <button class="bottom-nav__item" type="button" data-screen="stats"><span>⌁</span><small>Progrés</small></button>
+      <button class="bottom-nav__item" type="button" data-screen="settings"><span>⚙</span><small>Opcions</small></button>
+    </nav>
+  </div>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
