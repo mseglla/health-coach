@@ -70,9 +70,9 @@
 
         <section class="metric-grid" aria-label="Mètriques principals">
           <article class="metric-card metric-card--weight">
-            <span class="metric-card__label">Pes avui</span>
+            <span class="metric-card__label">Pes actual</span>
             <strong id="weightToday">—</strong>
-            <small id="weightDelta">Sense tendència</small>
+            <small id="weightDelta">Sense registres</small>
           </article>
           <article class="metric-card metric-card--avg">
             <span class="metric-card__label">Mitjana 7 dies</span>
@@ -87,7 +87,7 @@
           <article class="metric-card metric-card--burn">
             <span class="metric-card__label">Gastades</span>
             <strong id="burnToday">—</strong>
-            <small>kcal estimades</small>
+            <small id="burnSourceToday">sense dades</small>
           </article>
         </section>
 
@@ -100,17 +100,62 @@
       <section id="log" class="screen" aria-labelledby="log-title">
         <header class="screen-header screen-header--compact">
           <div>
-            <p class="eyebrow">REGISTRE DIARI</p>
+            <p class="eyebrow">REGISTRE</p>
             <h1 id="log-title">Avui</h1>
-            <p class="screen-subtitle">Menys de 15 segons.</p>
+            <p class="screen-subtitle">Ràpid, editable i sense perdre historial.</p>
           </div>
         </header>
 
-        <form id="dayForm" class="surface-card form-card">
+        <form id="weightForm" class="surface-card form-card form-card--accent">
+          <div class="section-title-row section-title-row--form">
+            <div>
+              <span class="section-kicker">PES</span>
+              <h2>Nova mesura</h2>
+            </div>
+            <span class="chip">data editable</span>
+          </div>
+          <input id="weightRecordId" type="hidden" />
           <div class="form-grid">
             <label class="field">
               <span>Pes</span>
               <div class="field__control"><input id="weightInput" inputmode="decimal" placeholder="89,2" /><em>kg</em></div>
+            </label>
+            <label class="field">
+              <span>Quan t’has pesat?</span>
+              <div class="field__control"><input id="weightMeasuredAt" type="datetime-local" /></div>
+            </label>
+          </div>
+          <div class="button-row">
+            <button class="button button--primary" type="submit"><span id="weightSubmitLabel">Guardar pes</span></button>
+            <button id="cancelWeightEdit" class="button button--ghost button--compact" type="button" hidden>Cancel·lar</button>
+          </div>
+        </form>
+
+        <section class="surface-card">
+          <div class="section-title-row">
+            <h2>Historial de pes</h2>
+            <span class="chip">editable</span>
+          </div>
+          <div id="weightHistory" class="record-list"></div>
+        </section>
+
+        <form id="dayForm" class="surface-card form-card">
+          <div class="section-title-row section-title-row--form">
+            <div>
+              <span class="section-kicker">ENERGIA</span>
+              <h2>Activitat i balanç</h2>
+            </div>
+            <span class="chip">avui</span>
+          </div>
+          <label class="field">
+            <span>Calories totals</span>
+            <div class="field__control"><input id="totalInput" inputmode="numeric" placeholder="2953" /><em>kcal</em></div>
+            <small>Posa les calories totals de l’Apple Watch. Si les introdueixes, tenen prioritat.</small>
+          </label>
+          <div class="form-grid">
+            <label class="field">
+              <span>Calories actives</span>
+              <div class="field__control"><input id="activeInput" inputmode="numeric" placeholder="983" /><em>kcal</em></div>
             </label>
             <label class="field">
               <span>Passos</span>
@@ -118,20 +163,52 @@
             </label>
           </div>
           <label class="field">
-            <span>Calories ingerides</span>
-            <div class="field__control"><input id="intakeInput" inputmode="numeric" placeholder="2100" /><em>kcal</em></div>
+            <span>Calories ingerides totals</span>
+            <div class="field__control"><input id="intakeInput" inputmode="numeric" placeholder="2050" /><em>kcal</em></div>
+            <small>És opcional si vas afegint calories als àpats: el total manual sempre tindrà prioritat.</small>
           </label>
+          <button class="button button--primary" type="submit">Guardar energia i activitat</button>
+        </form>
+
+        <form id="mealForm" class="surface-card form-card form-card--nutrition">
+          <div class="section-title-row section-title-row--form">
+            <div>
+              <span class="section-kicker section-kicker--nutrition">ÀPATS</span>
+              <h2>Explica què has menjat</h2>
+            </div>
+            <span class="chip">text lliure</span>
+          </div>
           <label class="field">
-            <span>Calories actives</span>
-            <div class="field__control"><input id="activeInput" inputmode="numeric" placeholder="550" /><em>kcal</em></div>
-            <small>Apple Watch o estimació manual, de moment.</small>
+            <span>Descripció</span>
+            <div class="field__control field__control--textarea">
+              <textarea id="mealDescription" rows="4" placeholder="Ex.: 3 canelons petits amb beixamel, carbassó i patata al forn..."></textarea>
+            </div>
+            <small>Ara ho guardem. La interpretació automàtica amb IA arribarà en el següent bloc.</small>
           </label>
-          <button class="button button--primary" type="submit">Guardar el dia</button>
+          <div class="form-grid">
+            <label class="field">
+              <span>Calories estimades</span>
+              <div class="field__control"><input id="mealCalories" inputmode="numeric" placeholder="Opcional" /><em>kcal</em></div>
+            </label>
+            <label class="field">
+              <span>Data i hora</span>
+              <div class="field__control"><input id="mealLoggedAt" type="datetime-local" /></div>
+            </label>
+          </div>
+          <button class="button button--primary button--nutrition" type="submit">Guardar àpat</button>
         </form>
 
         <section class="surface-card">
           <div class="section-title-row">
-            <h2>Últims registres</h2>
+            <h2>Àpats recents</h2>
+            <span id="mealCountChip" class="chip">0 avui</span>
+          </div>
+          <div id="mealHistory" class="record-list"></div>
+        </section>
+
+        <section class="surface-card">
+          <div class="section-title-row">
+            <h2>Últims dies</h2>
             <span class="chip">7 dies</span>
           </div>
           <div id="recentEntries" class="entry-list"></div>
@@ -147,7 +224,7 @@
           </div>
         </header>
         <section class="surface-card chart-card">
-          <div class="section-title-row"><h2>Pes</h2><span class="chip">30 dies</span></div>
+          <div class="section-title-row"><h2>Pes</h2><span class="chip">30 registres</span></div>
           <canvas id="weightChart" width="720" height="300"></canvas>
         </section>
         <section class="surface-card chart-card">
@@ -178,7 +255,7 @@
           <button class="button button--primary" type="submit">Guardar configuració</button>
           <button id="exportData" class="button button--ghost" type="button">Exportar dades</button>
         </form>
-        <p class="legal-note">La despesa és provisional: metabolisme estimat + calories actives. El model es recalibrarà quan acumulem dades i integrem Apple Health.</p>
+        <p class="legal-note">Si introdueixes calories totals, utilitzem aquesta dada. Si no, estimem la despesa amb metabolisme basal + calories actives. Les estimacions no substitueixen assessorament mèdic o nutricional.</p>
       </section>
     </main>
 
