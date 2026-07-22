@@ -1,4 +1,4 @@
-import { parseNumber, todayISO } from './calculations.js';
+import { createId, nowLocalDateTime, parseNumber, todayISO } from './calculations.js';
 import { exportState, loadState, persistState } from './storage.js';
 import { $, openScreen, renderApp, renderCharts, showToast } from './ui.js';
 
@@ -7,6 +7,7 @@ let state = loadState();
 function saveAndRender(message) {
   persistState(state);
   renderApp(state, todayISO());
+  if ($('stats').classList.contains('is-active')) renderCharts(state);
   if (message) showToast(message);
 }
 
@@ -17,17 +18,118 @@ function upsertDay(data) {
   state.days.sort((a, b) => a.date.localeCompare(b.date));
 }
 
+function resetWeightForm() {
+  $('weightRecordId').value = '';
+  $('weightInput').value = '';
+  $('weightMeasuredAt').value = nowLocalDateTime();
+  $('weightSubmitLabel').textContent = 'Guardar pes';
+  $('cancelWeightEdit').hidden = true;
+}
+
+function resetMealForm() {
+  $('mealDescription').value = '';
+  $('mealCalories').value = '';
+  $('mealLoggedAt').value = nowLocalDateTime();
+}
+
 $('dayForm').addEventListener('submit', event => {
   event.preventDefault();
   upsertDay({
     date: todayISO(),
-    weight: parseNumber($('weightInput').value),
     steps: parseNumber($('stepsInput').value),
     intake: parseNumber($('intakeInput').value),
-    active: parseNumber($('activeInput').value)
+    active: parseNumber($('activeInput').value),
+    total: parseNumber($('totalInput').value)
   });
-  saveAndRender('Dia guardat correctament');
+  saveAndRender('Energia i activitat guardades');
   openScreen('home');
+});
+
+$('weightForm').addEventListener('submit', event => {
+  event.preventDefault();
+  const value = parseNumber($('weightInput').value);
+  const measuredAt = $('weightMeasuredAt').value;
+  const recordId = $('weightRecordId').value;
+
+  if (!value || value < 30 || value > 300) {
+    showToast('Introdueix un pes vàlid');
+    return;
+  }
+  if (!measuredAt) {
+    showToast('Indica la data i l’hora');
+    return;
+  }
+
+  if (recordId) {
+    const index = state.weights.findIndex(record => record.id === recordId);
+    if (index >= 0) state.weights[index] = { ...state.weights[index], value, measuredAt };
+  } else {
+    state.weights.push({ id: createId('weight'), value, measuredAt, createdAt: new Date().toISOString() });
+  }
+  state.weights.sort((a, b) => a.measuredAt.localeCompare(b.measuredAt));
+  resetWeightForm();
+  saveAndRender(recordId ? 'Pes actualitzat' : 'Pes guardat');
+});
+
+$('cancelWeightEdit').addEventListener('click', resetWeightForm);
+
+$('weightHistory').addEventListener('click', event => {
+  const button = event.target.closest('[data-weight-action]');
+  if (!button) return;
+  const record = state.weights.find(item => item.id === button.dataset.id);
+  if (!record) return;
+
+  if (button.dataset.weightAction === 'edit') {
+    $('weightRecordId').value = record.id;
+    $('weightInput').value = String(record.value).replace('.', ',');
+    $('weightMeasuredAt').value = record.measuredAt.slice(0, 16);
+    $('weightSubmitLabel').textContent = 'Actualitzar pes';
+    $('cancelWeightEdit').hidden = false;
+    $('weightForm').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  if (button.dataset.weightAction === 'delete' && window.confirm('Vols eliminar aquest registre de pes?')) {
+    state.weights = state.weights.filter(item => item.id !== record.id);
+    if ($('weightRecordId').value === record.id) resetWeightForm();
+    saveAndRender('Pes eliminat');
+  }
+});
+
+$('mealForm').addEventListener('submit', event => {
+  event.preventDefault();
+  const description = $('mealDescription').value.trim();
+  const loggedAt = $('mealLoggedAt').value;
+  const calories = parseNumber($('mealCalories').value);
+
+  if (!description) {
+    showToast('Explica què has menjat');
+    return;
+  }
+  if (!loggedAt) {
+    showToast('Indica la data i l’hora');
+    return;
+  }
+
+  state.meals.push({
+    id: createId('meal'),
+    description,
+    calories,
+    loggedAt,
+    createdAt: new Date().toISOString(),
+    source: calories == null ? 'text_pending_estimate' : 'manual_estimate'
+  });
+  state.meals.sort((a, b) => a.loggedAt.localeCompare(b.loggedAt));
+  resetMealForm();
+  saveAndRender('Àpat guardat');
+});
+
+$('mealHistory').addEventListener('click', event => {
+  const button = event.target.closest('[data-meal-action="delete"]');
+  if (!button) return;
+  if (window.confirm('Vols eliminar aquest àpat?')) {
+    state.meals = state.meals.filter(meal => meal.id !== button.dataset.id);
+    saveAndRender('Àpat eliminat');
+  }
 });
 
 $('settingsForm').addEventListener('submit', event => {
@@ -64,4 +166,6 @@ if ('serviceWorker' in navigator && location.protocol !== 'file:') {
   navigator.serviceWorker.register('./sw.js').catch(() => {});
 }
 
+resetWeightForm();
+resetMealForm();
 renderApp(state, todayISO());
