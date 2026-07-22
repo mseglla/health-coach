@@ -1,8 +1,8 @@
-export const STORAGE_KEY = 'healthCoachV2';
-export const LEGACY_KEY = 'healthCoachMvpV1';
+export const STORAGE_KEY = 'healthCoachV3';
+export const LEGACY_KEYS = ['healthCoachV2', 'healthCoachMvpV1'];
 
 const defaultState = {
-  version: 2,
+  version: 3,
   settings: {
     name: 'Marc',
     age: 35,
@@ -11,7 +11,9 @@ const defaultState = {
     goal: 85,
     targetDate: '2026-11-30'
   },
-  days: []
+  days: [],
+  weights: [],
+  meals: []
 };
 
 export function createDefaultState() {

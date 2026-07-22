@@ -32,23 +32,44 @@
 .primary-action__icon { font-size: 22px; }
 .button { width: 100%; padding: 0 18px; }
 .button--primary { color: #10150b; background: linear-gradient(135deg, var(--color-primary), var(--color-primary-strong)); }
+.button--nutrition { color: #fff; background: linear-gradient(135deg, #a855f7, #7545ff); box-shadow: 0 12px 32px rgba(168, 85, 247, .22); }
 .button--ghost { margin-top: 10px; color: var(--color-text); background: var(--color-surface-soft); border: 1px solid var(--color-border); }
+.button--compact { margin-top: 0; }
+.button-row { display: grid; grid-template-columns: 1fr auto; gap: 10px; }
+.button-row .button--compact { width: auto; }
 .form-card { display: grid; gap: 16px; }
+.form-card--accent { background: linear-gradient(145deg, rgba(183,255,60,.08), rgba(61,140,255,.04)), var(--color-surface); }
+.form-card--nutrition { background: linear-gradient(145deg, rgba(168,85,247,.11), rgba(61,140,255,.04)), var(--color-surface); }
 .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .field { display: grid; gap: 8px; }
 .field > span { color: var(--color-muted); font-size: 12px; font-weight: 700; }
 .field small { color: var(--color-muted); font-size: 11px; line-height: 1.4; }
 .field__control { display: flex; align-items: center; gap: 8px; min-height: 52px; padding: 0 14px; border: 1px solid var(--color-border); border-radius: 16px; background: rgba(255,255,255,.04); transition: border-color var(--motion-fast), box-shadow var(--motion-fast); }
 .field__control:focus-within { border-color: rgba(183,255,60,.65); box-shadow: 0 0 0 4px rgba(183,255,60,.08); }
-.field__control input, .field__control select { min-width: 0; width: 100%; border: 0; outline: 0; background: transparent; }
+.field__control--textarea { align-items: flex-start; padding-top: 13px; padding-bottom: 13px; }
+.field__control input, .field__control select, .field__control textarea { min-width: 0; width: 100%; border: 0; outline: 0; color: var(--color-text); background: transparent; }
+.field__control textarea { resize: vertical; line-height: 1.45; }
 .field__control em { color: var(--color-muted); font-style: normal; font-size: 12px; }
 .section-title-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 16px; }
+.section-title-row--form { margin-bottom: 0; }
 .section-title-row h2 { font-size: 17px; }
-.chip { padding: 6px 9px; border-radius: 999px; color: var(--color-muted); background: rgba(255,255,255,.05); font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: .08em; }
+.section-kicker { display: block; margin-bottom: 4px; color: var(--color-primary); font-size: 10px; font-weight: 900; letter-spacing: .14em; }
+.section-kicker--nutrition { color: #c79cff; }
+.chip { padding: 6px 9px; border-radius: 999px; color: var(--color-muted); background: rgba(255,255,255,.05); font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: .08em; white-space: nowrap; }
 .entry-list { display: grid; }
 .entry { display: flex; justify-content: space-between; gap: 16px; padding: 13px 0; border-bottom: 1px solid var(--color-border); font-size: 13px; }
 .entry:last-child { border-bottom: 0; }
 .entry span:last-child { color: var(--color-muted); text-align: right; }
+.record-list { display: grid; gap: 10px; }
+.record-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 13px; border: 1px solid var(--color-border); border-radius: 16px; background: rgba(255,255,255,.025); }
+.record-row--meal { align-items: flex-start; }
+.record-row__main { display: grid; min-width: 0; gap: 5px; }
+.record-row__main strong { overflow: hidden; font-size: 14px; text-overflow: ellipsis; }
+.record-row--meal .record-row__main strong { white-space: normal; line-height: 1.35; }
+.record-row__main span { color: var(--color-muted); font-size: 11px; }
+.record-row__actions { display: flex; flex-shrink: 0; gap: 6px; }
+.mini-button { min-height: 34px; padding: 0 10px; border: 1px solid var(--color-border); border-radius: 11px; color: var(--color-text); background: rgba(255,255,255,.04); font-size: 11px; font-weight: 750; cursor: pointer; }
+.mini-button--danger { color: #ff8295; }
 .empty-state { margin: 0; padding: 10px 0; color: var(--color-muted); font-size: 13px; }
 .chart-legend { display: inline-flex; align-items: center; gap: 6px; color: var(--color-muted); font-size: 10px; }
 .chart-legend i, .chart-legend b { width: 10px; height: 3px; border-radius: 99px; background: var(--color-nutrition); }

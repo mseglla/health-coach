@@ -3,12 +3,51 @@ export function parseNumber(value) {
   return Number.isFinite(number) ? number : null;
 }
 
-export function todayISO() {
-  return new Date().toISOString().slice(0, 10);
+function pad(value) {
+  return String(value).padStart(2, '0');
 }
 
-export function latestWeight(days) {
-  return [...days].reverse().find(day => day.weight)?.weight ?? null;
+export function localDateISO(date = new Date()) {
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+}
+
+export function todayISO() {
+  return localDateISO();
+}
+
+export function nowLocalDateTime(date = new Date()) {
+  return `${localDateISO(date)}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+}
+
+export function createId(prefix = 'record') {
+  const value = globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+  return `${prefix}-${value}`;
+}
+
+export function recordDate(dateTime) {
+  return String(dateTime || '').slice(0, 10);
+}
+
+export function latestWeightRecord(weights = []) {
+  return [...weights].sort((a, b) => b.measuredAt.localeCompare(a.measuredAt))[0] || null;
+}
+
+export function latestWeight(weights = []) {
+  return latestWeightRecord(weights)?.value ?? null;
+}
+
+export function weightForDate(weights = [], date) {
+  return [...weights]
+    .filter(record => recordDate(record.measuredAt) === date)
+    .sort((a, b) => b.measuredAt.localeCompare(a.measuredAt))[0] || null;
+}
+
+export function dailyWeightSeries(weights = []) {
+  const byDate = new Map();
+  [...weights]
+    .sort((a, b) => a.measuredAt.localeCompare(b.measuredAt))
+    .forEach(record => byDate.set(recordDate(record.measuredAt), record));
+  return [...byDate.values()].sort((a, b) => a.measuredAt.localeCompare(b.measuredAt));
 }
 
 export function bmr(settings, weight) {
@@ -18,21 +57,38 @@ export function bmr(settings, weight) {
 }
 
 export function totalBurn(state, day) {
-  const basal = bmr(state.settings, day.weight || latestWeight(state.days));
-  return basal ? Math.round(basal + (day.active || 0)) : null;
+  if (day?.total != null) return Math.round(day.total);
+  const basal = bmr(state.settings, latestWeight(state.weights));
+  return basal ? Math.round(basal + (day?.active || 0)) : null;
 }
 
-export function averageWeight(days, count = 7, offset = 0) {
-  const weighted = days.filter(day => day.weight);
+export function burnSource(day) {
+  return day?.total != null ? 'Apple Watch' : day?.active != null ? 'estimades' : '';
+}
+
+export function mealCaloriesForDate(state, date) {
+  const values = (state.meals || [])
+    .filter(meal => recordDate(meal.loggedAt) === date && meal.calories != null)
+    .map(meal => Number(meal.calories));
+  return values.length ? Math.round(values.reduce((sum, value) => sum + value, 0)) : null;
+}
+
+export function totalIntake(state, day) {
+  if (day?.intake != null) return Math.round(day.intake);
+  return mealCaloriesForDate(state, day?.date);
+}
+
+export function averageWeight(weights, count = 7, offset = 0) {
+  const series = dailyWeightSeries(weights);
   const end = offset ? -offset : undefined;
   const start = -(count + offset);
-  const values = weighted.slice(start, end).map(day => day.weight);
+  const values = series.slice(start, end).map(record => record.value);
   return values.length ? values.reduce((sum, value) => sum + value, 0) / values.length : null;
 }
 
-export function weightTrend(days) {
-  const current = averageWeight(days, 7, 0);
-  const previous = averageWeight(days, 7, 7);
+export function weightTrend(weights) {
+  const current = averageWeight(weights, 7, 0);
+  const previous = averageWeight(weights, 7, 7);
   return current != null && previous != null ? current - previous : null;
 }
 
@@ -44,10 +100,20 @@ export function daysUntil(dateString) {
 }
 
 export function formatKg(value) {
-  return value != null ? `${value.toFixed(1).replace('.', ',')} kg` : '—';
+  return value != null ? `${Number(value).toFixed(1).replace('.', ',')} kg` : '—';
 }
 
 export function formatDateShort(dateString) {
   if (!dateString) return '—';
   return new Intl.DateTimeFormat('ca-ES', { day: 'numeric', month: 'short' }).format(new Date(`${dateString}T12:00:00`));
+}
+
+export function formatDateTime(dateTime) {
+  if (!dateTime) return '—';
+  return new Intl.DateTimeFormat('ca-ES', {
+    day: 'numeric',
+    month: 'short',
+    hour: '2-digit',
+    minute: '2-digit'
+  }).format(new Date(dateTime));
 }
