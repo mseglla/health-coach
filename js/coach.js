@@ -1,24 +1,14 @@
-import { totalBurn, totalIntake, averageWeight, latestWeight } from './calculations.js';
-
+import { adherenceScore, averageDeficit, averageWeight, totalBurn, totalIntake, weightTrend } from './calculations.js';
 export function getCoachDecision(state, day) {
-  const burn = totalBurn(state, day);
-  const intake = totalIntake(state, day);
-  const deficit = burn != null && intake != null ? burn - intake : null;
-  const weights = state.weights || [];
-
-  if (!latestWeight(weights)) return { tone: 'neutral', label: 'SENSE DADES', title: 'Pesa’t per començar a personalitzar el pla.', caption: 'Comença pel pes' };
-  if (intake == null || burn == null) return { tone: 'warn', label: 'DIA INCOMPLET', title: 'Completa la ingesta i la despesa total o activa.', caption: 'Falten dades' };
-
-  if (weights.length >= 14) {
-    const first = averageWeight(weights, 7, 7);
-    const second = averageWeight(weights, 7, 0);
-    if (first != null && second != null && second >= first - 0.1) {
-      return { tone: 'bad', label: 'CAL INTERVENIR', title: 'La tendència és plana. Aquesta setmana caldrà una mesura petita i concreta.', caption: 'Estancament real' };
-    }
-  }
-
-  if (deficit > 850) return { tone: 'warn', label: 'DÈFICIT ALT', title: 'No forcis més avui. Menja prou per recuperar-te.', caption: 'Prioritza recuperar' };
-  if (deficit >= 300) return { tone: 'good', label: 'EN RUTA', title: `Dèficit estimat de ${Math.round(deficit)} kcal. Mantén el pla.`, caption: 'Objectiu assolit' };
-  if (deficit >= 0) return { tone: 'warn', label: 'MARGE PETIT', title: 'Una caminada curta o un sopar una mica més lleuger poden completar el dia.', caption: 'Encara hi ha marge' };
-  return { tone: 'bad', label: 'FORA DE RUTA', title: 'No ho compensis amb càstig. Reprèn el pla amb normalitat demà.', caption: 'Superàvit estimat' };
+  const burn=totalBurn(state,day), intake=totalIntake(state,day), deficit=burn!=null&&intake!=null?burn-intake:null;
+  const score=adherenceScore(state,day.date);
+  if(score<25) return {tone:'neutral',label:'COMENÇA',title:'Registra una dada ràpida: pes, àpat o activitat.',caption:'Primer pas'};
+  if(intake==null) return {tone:'warn',label:'FALTA MENJAR',title:'Afegeix els àpats d’avui per entendre el balanç real.',caption:'Completa el dia'};
+  if(burn==null) return {tone:'warn',label:'FALTA ACTIVITAT',title:'Introdueix calories totals o actives de l’Apple Watch.',caption:'Falten dades'};
+  if(deficit>900) return {tone:'warn',label:'DÈFICIT ALT',title:'Ja n’hi ha prou per avui. Prioritza sopar bé i recuperar.',caption:'No forcis més'};
+  if(deficit>=300) return {tone:'good',label:'EN RUTA',title:`Dèficit estimat de ${Math.round(deficit)} kcal. Mantén el pla.`,caption:'Objectiu assolit'};
+  if(deficit>=0) return {tone:'warn',label:'MARGE PETIT',title:'No cal compensar. Una decisió lleugera pot completar el dia.',caption:'Encara hi ha marge'};
+  const trend=weightTrend(state.weights), avg=averageWeight(state.weights,7), avgDef=averageDeficit(state,7);
+  if(state.weights.length>=14 && trend!=null && trend>-0.1 && avg!=null && avgDef!=null) return {tone:'bad',label:'REVISAR TENDÈNCIA',title:'La tendència de dues setmanes és plana. Proposa un únic ajust petit.',caption:'Possible estancament'};
+  return {tone:'bad',label:'FORA DE RUTA',title:'No ho castiguis demà. Tanca el dia i reprèn el pla normal.',caption:'Superàvit estimat'};
 }
