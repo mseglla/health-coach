@@ -1,8 +1,8 @@
-const CACHE = 'atles-v4-foundation-1';
+const CACHE = 'atles-v4-foundation-2';
 const ASSETS = [
   './', './index.html', './manifest.webmanifest', './assets/icon.svg',
   './css/tokens.css', './css/base.css', './css/components.css', './css/screens.css',
-  './js/app.js', './js/state.js', './js/storage.js', './js/calculations.js', './js/coach.js', './js/charts.js', './js/ui.js'
+  './js/app.js', './js/backup.js', './js/state.js', './js/storage.js', './js/calculations.js', './js/coach.js', './js/charts.js', './js/ui.js'
 ];
 
 self.addEventListener('install', event => {
