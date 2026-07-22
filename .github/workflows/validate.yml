@@ -30,6 +30,11 @@ jobs:
           node --check js/charts.js
           node --check js/ui.js
           node --check sw.js
+          node --check scripts/validate.mjs
+          node --check scripts/test-logic.mjs
 
       - name: Validate structure
         run: node scripts/validate.mjs
+
+      - name: Test calculations and coach
+        run: node scripts/test-logic.mjs
