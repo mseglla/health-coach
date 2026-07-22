@@ -36,7 +36,7 @@ assert.equal(totalBurn(state, getDay(state, '2026-07-22')), 2953, 'Apple Watch t
 assert.equal(mealCaloriesForDate(state, '2026-07-22'), 1700);
 assert.equal(totalIntake(state, getDay(state, '2026-07-22')), 1700, 'Meal sum must be used without manual intake');
 assert.equal(adherenceScore(state, '2026-07-22'), 100);
-assert.equal(averageDeficit(state, 7), 852);
+assert.equal(averageDeficit(state, 7), 877, 'Average of 500 and 1253 kcal must round to 877');
 assert.equal(Number(averageWeight(state.weights, 2).toFixed(2)), 89.05);
 assert.equal(Number(weightTrend(state.weights)), 0, 'With fewer than two full windows trend is neutral');
 assert.equal(suggestedMealType(new Date('2026-07-22T08:00:00')), 'breakfast');
