@@ -31,8 +31,8 @@ La prioritat és construir una base fiable. No s’afegeixen funcionalitats gran
 
 ## Fase 3 — Supabase mínim
 
-- [ ] Crear projecte DEV.
-- [ ] Configurar Auth.
+- [x] Crear projecte DEV.
+- [x] Configurar Auth.
 - [ ] Crear migracions SQL versionades.
 - [ ] Crear `profiles`, `goals` i `weight_logs`.
 - [ ] Activar i provar RLS.

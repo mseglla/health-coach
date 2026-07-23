@@ -59,3 +59,25 @@ Els registres sincronitzables utilitzaran UUID i `deleted_at` per evitar pèrdue
 **Estat:** acceptada.
 
 Una PWA no prometrà accés directe complet a Apple Health. Aquesta integració requerirà una capa nativa o una solució específica futura.
+
+## ADR-010 — Autenticació inicial amb correu i contrasenya
+
+**Estat:** acceptada.
+
+ATLES utilitzarà inicialment Supabase Auth amb correu i contrasenya. La confirmació del correu serà obligatòria.
+
+**Motiu:** és el flux més previsible per validar autenticació, RLS, recuperació entre dispositius i sincronització en una PWA. Evita introduir ara la complexitat dels redirects de magic link entre el navegador i la PWA instal·lada.
+
+**Configuració inicial de seguretat:**
+
+- Canvi segur de correu activat.
+- Canvi segur de contrasenya activat.
+- Contrasenya mínima de 10 caràcters.
+- Requisits de majúscula, minúscula, número i símbol.
+- Confirmació del correu activada.
+
+**Conseqüències:**
+
+- Caldrà implementar registre, confirmació, inici i tancament de sessió i recuperació de contrasenya.
+- Magic link i altres proveïdors es podran afegir posteriorment sense modificar el model de dades funcional.
+- L’autenticació necessita connexió, però les funcionalitats locals d’ATLES no han de quedar bloquejades permanentment per l’absència de xarxa.
