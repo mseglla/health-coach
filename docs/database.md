@@ -125,7 +125,6 @@ with check (auth.uid() = id)
 
 ## Decisions pendents abans de crear taules
 
-- Mètode d’autenticació inicial: magic link o correu/contrasenya.
 - Un únic projecte Supabase amb esquemes separats o projectes DEV/PROD independents.
 - Política exacta de conflictes i soft delete.
 - Límit de retenció del registre de sincronització.
