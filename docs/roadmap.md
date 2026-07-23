@@ -33,9 +33,9 @@ La prioritat és construir una base fiable. No s’afegeixen funcionalitats gran
 
 - [x] Crear projecte DEV.
 - [x] Configurar Auth.
-- [ ] Crear migracions SQL versionades.
-- [ ] Crear `profiles`, `goals` i `weight_logs`.
-- [ ] Activar i provar RLS.
+- [x] Crear migracions SQL versionades.
+- [x] Crear `profiles`, `goals` i `weight_logs`.
+- [x] Activar i provar RLS.
 - [ ] Sincronitzar només pesos com a pilot.
 - [ ] Provar offline, conflictes i recuperació.
 
