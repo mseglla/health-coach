@@ -1,3 +1,5 @@
+import { IndexedDBAdapter } from './indexeddb-adapter.js';
+import { MigratingStorageAdapter } from './migrating-storage-adapter.js';
 import { STORAGE_KEY, LEGACY_KEYS, createDefaultState } from './state.js';
 
 function safeParse(raw) {
@@ -78,8 +80,29 @@ export class StorageService {
   }
 }
 
+export function createDefaultStorageAdapter() {
+  const fallback = new LocalStorageAdapter();
+
+  try {
+    return new MigratingStorageAdapter({
+      primary: new IndexedDBAdapter(),
+      fallback
+    });
+  } catch (error) {
+    if (typeof window !== 'undefined') {
+      console.error(
+        'IndexedDB unavailable; ATLES will continue with localStorage',
+        error
+      );
+    }
+    return fallback;
+  }
+}
+
+export const storageAdapter = createDefaultStorageAdapter();
+
 export const storageService = new StorageService(
-  new LocalStorageAdapter()
+  storageAdapter
 );
 
 export function exportState(state) {
