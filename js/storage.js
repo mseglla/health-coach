@@ -42,25 +42,45 @@ function normalizeState(raw) {
   };
 }
 
-export function loadState() {
-  const current = safeParse(localStorage.getItem(STORAGE_KEY));
-  if (current) return normalizeState(current);
-
-  for (const key of LEGACY_KEYS) {
-    const legacy = safeParse(localStorage.getItem(key));
-    if (legacy) {
-      const migrated = normalizeState(legacy);
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(migrated));
-      return migrated;
-    }
+export class LocalStorageAdapter {
+  async getItem(key) {
+    return localStorage.getItem(key);
   }
 
-  return createDefaultState();
+  async setItem(key, value) {
+    localStorage.setItem(key, value);
+  }
 }
 
-export function persistState(state) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+export class StorageService {
+  constructor(adapter) {
+    this.adapter = adapter;
+  }
+
+  async loadState() {
+    const current = safeParse(await this.adapter.getItem(STORAGE_KEY));
+    if (current) return normalizeState(current);
+
+    for (const key of LEGACY_KEYS) {
+      const legacy = safeParse(await this.adapter.getItem(key));
+      if (legacy) {
+        const migrated = normalizeState(legacy);
+        await this.adapter.setItem(STORAGE_KEY, JSON.stringify(migrated));
+        return migrated;
+      }
+    }
+
+    return createDefaultState();
+  }
+
+  async persistState(state) {
+    await this.adapter.setItem(STORAGE_KEY, JSON.stringify(state));
+  }
 }
+
+export const storageService = new StorageService(
+  new LocalStorageAdapter()
+);
 
 export function exportState(state) {
   const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });

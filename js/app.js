@@ -1,11 +1,11 @@
 import { createId, nowLocalDateTime, parseNumber, todayISO } from './calculations.js';
-import { exportState, loadState, persistState } from './storage.js';
+import { exportState, storageService } from './storage.js';
 import { $, openScreen, renderApp, renderCharts, showToast } from './ui.js';
 
-let state = loadState();
+let state = await storageService.loadState();
 
-function saveAndRender(message) {
-  persistState(state);
+async function saveAndRender(message) {
+  await storageService.persistState(state);
   renderApp(state, todayISO());
   if ($('stats').classList.contains('is-active')) renderCharts(state);
   if (message) showToast(message);
@@ -32,7 +32,7 @@ function resetMealForm() {
   $('mealLoggedAt').value = nowLocalDateTime();
 }
 
-$('dayForm').addEventListener('submit', event => {
+$('dayForm').addEventListener('submit', async event => {
   event.preventDefault();
   upsertDay({
     date: todayISO(),
@@ -41,11 +41,11 @@ $('dayForm').addEventListener('submit', event => {
     active: parseNumber($('activeInput').value),
     total: parseNumber($('totalInput').value)
   });
-  saveAndRender('Energia i activitat guardades');
+  await saveAndRender('Energia i activitat guardades');
   openScreen('home');
 });
 
-$('weightForm').addEventListener('submit', event => {
+$('weightForm').addEventListener('submit', async event => {
   event.preventDefault();
   const value = parseNumber($('weightInput').value);
   const measuredAt = $('weightMeasuredAt').value;
@@ -68,12 +68,12 @@ $('weightForm').addEventListener('submit', event => {
   }
   state.weights.sort((a, b) => a.measuredAt.localeCompare(b.measuredAt));
   resetWeightForm();
-  saveAndRender(recordId ? 'Pes actualitzat' : 'Pes guardat');
+  await saveAndRender(recordId ? 'Pes actualitzat' : 'Pes guardat');
 });
 
 $('cancelWeightEdit').addEventListener('click', resetWeightForm);
 
-$('weightHistory').addEventListener('click', event => {
+$('weightHistory').addEventListener('click', async event => {
   const button = event.target.closest('[data-weight-action]');
   if (!button) return;
   const record = state.weights.find(item => item.id === button.dataset.id);
@@ -91,11 +91,11 @@ $('weightHistory').addEventListener('click', event => {
   if (button.dataset.weightAction === 'delete' && window.confirm('Vols eliminar aquest registre de pes?')) {
     state.weights = state.weights.filter(item => item.id !== record.id);
     if ($('weightRecordId').value === record.id) resetWeightForm();
-    saveAndRender('Pes eliminat');
+    await saveAndRender('Pes eliminat');
   }
 });
 
-$('mealForm').addEventListener('submit', event => {
+$('mealForm').addEventListener('submit', async event => {
   event.preventDefault();
   const description = $('mealDescription').value.trim();
   const loggedAt = $('mealLoggedAt').value;
@@ -120,19 +120,19 @@ $('mealForm').addEventListener('submit', event => {
   });
   state.meals.sort((a, b) => a.loggedAt.localeCompare(b.loggedAt));
   resetMealForm();
-  saveAndRender('Àpat guardat');
+  await saveAndRender('Àpat guardat');
 });
 
-$('mealHistory').addEventListener('click', event => {
+$('mealHistory').addEventListener('click', async event => {
   const button = event.target.closest('[data-meal-action="delete"]');
   if (!button) return;
   if (window.confirm('Vols eliminar aquest àpat?')) {
     state.meals = state.meals.filter(meal => meal.id !== button.dataset.id);
-    saveAndRender('Àpat eliminat');
+    await saveAndRender('Àpat eliminat');
   }
 });
 
-$('settingsForm').addEventListener('submit', event => {
+$('settingsForm').addEventListener('submit', async event => {
   event.preventDefault();
   state.settings = {
     name: $('nameSetting').value.trim() || 'Marc',
@@ -142,7 +142,7 @@ $('settingsForm').addEventListener('submit', event => {
     goal: parseNumber($('goalSetting').value),
     targetDate: $('dateSetting').value
   };
-  saveAndRender('Configuració actualitzada');
+  await saveAndRender('Configuració actualitzada');
 });
 
 $('exportData').addEventListener('click', () => exportState(state));
