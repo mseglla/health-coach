@@ -147,6 +147,44 @@ $('settingsForm').addEventListener('submit', async event => {
 
 $('exportData').addEventListener('click', () => exportState(state));
 
+$('importData').addEventListener('click', () => {
+  $('importDataFile').click();
+});
+
+$('importDataFile').addEventListener('change', async event => {
+  const [file] = event.target.files;
+  if (!file) return;
+
+  const confirmed = window.confirm(
+    'Aquesta acció substituirà les dades actuals per les de la còpia seleccionada. Vols continuar?'
+  );
+
+  if (!confirmed) {
+    event.target.value = '';
+    return;
+  }
+
+  try {
+    const importedState = await storageService.importState(
+      await file.text()
+    );
+
+    state = importedState;
+    renderApp(state, todayISO());
+
+    if ($('stats').classList.contains('is-active')) {
+      renderCharts(state);
+    }
+
+    showToast('Còpia restaurada correctament');
+  } catch (error) {
+    console.error('Data import failed', error);
+    showToast(error.message || 'No s’ha pogut importar la còpia');
+  } finally {
+    event.target.value = '';
+  }
+});
+
 document.querySelectorAll('[data-screen]').forEach(button => {
   button.addEventListener('click', () => {
     openScreen(button.dataset.screen);

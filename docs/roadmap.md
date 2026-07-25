@@ -26,7 +26,7 @@ La prioritat és construir una base fiable. No s’afegeixen funcionalitats gran
 - [ ] Dissenyar repositoris de dades desacoblats de la UI.
 - [x] Introduir IndexedDB sense eliminar localStorage.
 - [x] Migració localStorage → IndexedDB provada i reversible.
-- [ ] Exportació/importació de còpies.
+- [x] Exportació/importació de còpies.
 - [ ] Proves de persistència i recuperació.
 
 ## Fase 3 — Supabase mínim

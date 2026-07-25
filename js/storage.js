@@ -44,6 +44,83 @@ function normalizeState(raw) {
   };
 }
 
+function isObject(value) {
+  return value !== null && typeof value === 'object' && !Array.isArray(value);
+}
+
+export function parseImportedState(serializedState) {
+  let raw;
+
+  try {
+    raw = JSON.parse(serializedState);
+  } catch {
+    throw new Error('El fitxer no conté un JSON vàlid');
+  }
+
+  if (!isObject(raw)) {
+    throw new Error('La còpia no conté un estat ATLES vàlid');
+  }
+
+  if (raw.version !== 3) {
+    throw new Error('La còpia no és compatible amb la versió actual d’ATLES');
+  }
+
+  if (!isObject(raw.settings)) {
+    throw new Error('La còpia no conté una configuració vàlida');
+  }
+
+  for (const key of ['days', 'weights', 'meals']) {
+    if (!Array.isArray(raw[key])) {
+      throw new Error(`La còpia no conté una llista vàlida de ${key}`);
+    }
+  }
+
+  const invalidDay = raw.days.some(day => (
+    !isObject(day) ||
+    typeof day.date !== 'string' ||
+    !day.date
+  ));
+
+  if (invalidDay) {
+    throw new Error('La còpia conté registres diaris invàlids');
+  }
+
+  const invalidWeight = raw.weights.some(weight => (
+    !isObject(weight) ||
+    typeof weight.id !== 'string' ||
+    !weight.id ||
+    !Number.isFinite(Number(weight.value)) ||
+    Number(weight.value) <= 0 ||
+    typeof weight.measuredAt !== 'string' ||
+    !weight.measuredAt
+  ));
+
+  if (invalidWeight) {
+    throw new Error('La còpia conté registres de pes invàlids');
+  }
+
+  const invalidMeal = raw.meals.some(meal => (
+    !isObject(meal) ||
+    typeof meal.id !== 'string' ||
+    !meal.id ||
+    typeof meal.description !== 'string' ||
+    !meal.description.trim() ||
+    typeof meal.loggedAt !== 'string' ||
+    !meal.loggedAt ||
+    (
+      meal.calories !== null &&
+      meal.calories !== undefined &&
+      !Number.isFinite(Number(meal.calories))
+    )
+  ));
+
+  if (invalidMeal) {
+    throw new Error('La còpia conté registres d’àpats invàlids');
+  }
+
+  return normalizeState(raw);
+}
+
 export class LocalStorageAdapter {
   async getItem(key) {
     return localStorage.getItem(key);
@@ -77,6 +154,12 @@ export class StorageService {
 
   async persistState(state) {
     await this.adapter.setItem(STORAGE_KEY, JSON.stringify(state));
+  }
+
+  async importState(serializedState) {
+    const importedState = parseImportedState(serializedState);
+    await this.persistState(importedState);
+    return importedState;
   }
 }
 
