@@ -101,3 +101,24 @@ La UI no ha de crear, editar ni eliminar directament els registres sincronitzabl
 - Els pesos utilitzen el mateix UUID localment i remotament.
 - Les eliminacions són soft delete i es conserven com a tombstones.
 - Àpats, activitats i altres entitats adoptaran el patró incrementalment.
+
+## ADR-012 — SDK de Supabase carregat sota demanda
+
+**Estat:** acceptada i implementada al servei base.
+
+ATLES utilitzarà el SDK oficial `supabase-js` amb una versió fixada. El SDK només es carregarà quan una operació necessiti autenticació o sincronització.
+
+**Motiu:** Supabase Auth gestiona correctament sessió, renovació de tokens i flux PKCE. Carregar-lo sota demanda evita que una dependència de xarxa bloquegi l’ús local d’ATLES.
+
+**Alternatives descartades:**
+
+- Reimplementar manualment el protocol d’autenticació i renovació de tokens.
+- Carregar el SDK obligatòriament durant l’arrencada de l’aplicació.
+- Introduir ara un procés complet de bundling per una única dependència.
+
+**Conseqüències:**
+
+- L’autenticació i la sincronització necessiten xarxa.
+- Les funcionalitats locals continuen disponibles sense el SDK.
+- La versió del SDK s’ha d’actualitzar explícitament i tornar a provar.
+- Només la URL i la publishable key poden formar part del frontend.
