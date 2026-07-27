@@ -70,6 +70,23 @@ En una incidència crítica:
 6. No indicar a l’usuari que esborri dades locals abans d’analitzar la migració.
 7. Crear una incidència amb causa, impacte i correcció.
 
+## Configuració pública de Supabase
+
+El frontend pot contenir exclusivament:
+
+- URL pública del projecte Supabase.
+- Publishable key del projecte.
+- Versió fixada del SDK oficial.
+
+No es poden incloure mai al frontend:
+
+- `service_role`.
+- Secret keys.
+- Contrasenya de la base de dades.
+- Tokens personals o credencials d’usuaris.
+
+El SDK de Supabase es carrega sota demanda. L’aplicació local ha de continuar funcionant si el SDK o la xarxa no estan disponibles.
+
 ## GitHub Pages i Vercel
 
 GitHub Pages continua com a producció temporal.

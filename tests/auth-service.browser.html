@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="ca">
+<head>
+  <meta charset="utf-8">
+  <title>ATLES — Supabase AuthService test</title>
+</head>
+<body>
+  <pre id="results">Executant proves...</pre>
+
+  <script type="module">
+    import { AuthService } from '../js/auth-service.js';
+    import {
+      createSupabaseClient
+    } from '../js/supabase-client.js';
+    import {
+      SUPABASE_SDK_VERSION
+    } from '../js/supabase-config.js';
+
+    const output = document.querySelector('#results');
+    const messages = [];
+
+    function assert(condition, message) {
+      if (!condition) throw new Error(message);
+      messages.push(`PASS — ${message}`);
+      output.textContent = messages.join('\n');
+    }
+
+    try {
+      localStorage.clear();
+
+      const client = await createSupabaseClient();
+
+      assert(
+        typeof client?.auth?.signInWithPassword === 'function',
+        `carrega supabase-js ${SUPABASE_SDK_VERSION}`
+      );
+
+      assert(
+        typeof client?.auth?.signUp === 'function' &&
+        typeof client?.auth?.signOut === 'function',
+        'exposa els mètodes oficials d’autenticació'
+      );
+
+      const authService = new AuthService({
+        clientFactory: async () => client,
+        redirectUrlFactory: () =>
+          'http://localhost:8007/'
+      });
+
+      const session = await authService.getSession();
+
+      assert(
+        session === null,
+        'inicialitza sense inventar cap sessió'
+      );
+
+      assert(
+        document.querySelectorAll(
+          'script[data-atles-supabase-sdk]'
+        ).length === 1,
+        'carrega una sola còpia del SDK'
+      );
+
+      assert(
+        !document.querySelector(
+          'script[data-service-role]'
+        ),
+        'no exposa cap credencial privilegiada'
+      );
+
+      localStorage.clear();
+      messages.push('PASS — elimina la sessió local de prova');
+      output.textContent = messages.join('\n');
+    } catch (error) {
+      localStorage.clear();
+      output.textContent =
+        `${messages.join('\n')}\nFAIL — ${error.message}`;
+      throw error;
+    }
+  </script>
+</body>
+</html>

@@ -79,6 +79,13 @@ Supabase
 - Resums diaris.
 - Operacions pendents de sincronitzar.
 
+### Client Supabase
+
+- Es carrega sota demanda quan cal autenticació o sincronització.
+- Manté la renovació i persistència de la sessió mitjançant el SDK oficial.
+- Una fallada de xarxa o del SDK no bloqueja la càrrega de les dades locals.
+- Utilitza només la URL i la publishable key del projecte corresponent.
+
 ### Supabase
 
 - Autenticació.
