@@ -33,12 +33,20 @@ function normalizeState(raw) {
     days: days.map(({ weight, ...day }) => day),
     weights: migratedWeights
       .filter(item => item && Number.isFinite(Number(item.value)) && item.measuredAt)
-      .map(item => ({
-        id: item.id || crypto.randomUUID(),
-        value: Number(item.value),
-        measuredAt: item.measuredAt,
-        createdAt: item.createdAt || new Date().toISOString()
-      }))
+      .map(item => {
+        const createdAt =
+          item.createdAt || new Date().toISOString();
+
+        return {
+          id: item.id || crypto.randomUUID(),
+          value: Number(item.value),
+          measuredAt: item.measuredAt,
+          source: item.source || 'manual',
+          createdAt,
+          updatedAt: item.updatedAt || createdAt,
+          deletedAt: item.deletedAt || null
+        };
+      })
       .sort((a, b) => a.measuredAt.localeCompare(b.measuredAt)),
     meals: Array.isArray(raw.meals) ? raw.meals : []
   };

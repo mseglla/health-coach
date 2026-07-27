@@ -23,7 +23,7 @@ La prioritat és construir una base fiable. No s’afegeixen funcionalitats gran
 
 ## Fase 2 — Persistència local robusta
 
-- [ ] Dissenyar repositoris de dades desacoblats de la UI.
+- [x] Dissenyar repositoris de dades desacoblats de la UI.
 - [x] Introduir IndexedDB sense eliminar localStorage.
 - [x] Migració localStorage → IndexedDB provada i reversible.
 - [x] Exportació/importació de còpies.
