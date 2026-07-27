@@ -28,8 +28,12 @@ export function recordDate(dateTime) {
   return String(dateTime || '').slice(0, 10);
 }
 
+export function activeWeightRecords(weights = []) {
+  return weights.filter(record => !record.deletedAt);
+}
+
 export function latestWeightRecord(weights = []) {
-  return [...weights].sort((a, b) => b.measuredAt.localeCompare(a.measuredAt))[0] || null;
+  return activeWeightRecords(weights).sort((a, b) => b.measuredAt.localeCompare(a.measuredAt))[0] || null;
 }
 
 export function latestWeight(weights = []) {
@@ -37,14 +41,14 @@ export function latestWeight(weights = []) {
 }
 
 export function weightForDate(weights = [], date) {
-  return [...weights]
+  return activeWeightRecords(weights)
     .filter(record => recordDate(record.measuredAt) === date)
     .sort((a, b) => b.measuredAt.localeCompare(a.measuredAt))[0] || null;
 }
 
 export function dailyWeightSeries(weights = []) {
   const byDate = new Map();
-  [...weights]
+  activeWeightRecords(weights)
     .sort((a, b) => a.measuredAt.localeCompare(b.measuredAt))
     .forEach(record => byDate.set(recordDate(record.measuredAt), record));
   return [...byDate.values()].sort((a, b) => a.measuredAt.localeCompare(b.measuredAt));

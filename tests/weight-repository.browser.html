@@ -1,0 +1,264 @@
+<!doctype html>
+<html lang="ca">
+<head>
+  <meta charset="utf-8">
+  <title>ATLES — WeightRepository integration</title>
+</head>
+<body>
+  <pre id="results">Executant proves...</pre>
+  <iframe id="appFrame" style="width:1px;height:1px;border:0;opacity:0"></iframe>
+
+  <script type="module">
+    const output = document.querySelector('#results');
+    const frame = document.querySelector('#appFrame');
+    const messages = [];
+    const storageKey = 'healthCoachV3';
+    const databaseName = 'atles-local';
+    const uuidPattern =
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+    function assert(condition, message) {
+      if (!condition) throw new Error(message);
+      messages.push(`PASS — ${message}`);
+      output.textContent = messages.join('\n');
+    }
+
+    function delay(milliseconds) {
+      return new Promise(resolve => setTimeout(resolve, milliseconds));
+    }
+
+    async function waitFor(check, timeout = 10000) {
+      const startedAt = Date.now();
+
+      while (Date.now() - startedAt < timeout) {
+        try {
+          if (check()) return;
+        } catch {}
+
+        await delay(50);
+      }
+
+      throw new Error('Temps d’espera excedit');
+    }
+
+    function deleteDatabase(name) {
+      return new Promise((resolve, reject) => {
+        const request = indexedDB.deleteDatabase(name);
+
+        request.onsuccess = () => resolve();
+        request.onerror = () => reject(
+          request.error ||
+          new Error('No s’ha pogut eliminar la base de prova')
+        );
+        request.onblocked = () => reject(
+          new Error('L’eliminació de la base ha quedat bloquejada')
+        );
+      });
+    }
+
+    function loadFrame(url) {
+      return new Promise(resolve => {
+        frame.onload = () => resolve({
+          appWindow: frame.contentWindow,
+          appDocument: frame.contentDocument
+        });
+        frame.src = url;
+      });
+    }
+
+    async function waitForApp(appDocument) {
+      await waitFor(() =>
+        appDocument.querySelector('#nameSetting')?.value &&
+        appDocument.querySelector('#weightMeasuredAt')?.value
+      );
+    }
+
+    try {
+      if ('serviceWorker' in navigator) {
+        const registrations =
+          await navigator.serviceWorker.getRegistrations();
+        await Promise.all(
+          registrations.map(registration => registration.unregister())
+        );
+      }
+
+      if ('caches' in window) {
+        const names = await caches.keys();
+        await Promise.all(names.map(name => caches.delete(name)));
+      }
+
+      await deleteDatabase(databaseName);
+      localStorage.clear();
+
+      const legacyState = {
+        version: 3,
+        settings: {
+          name: 'Weight repository test',
+          age: 34,
+          height: 176,
+          sex: 'male',
+          goal: 78,
+          targetDate: '2026-12-31'
+        },
+        days: [],
+        weights: [{
+          id: 'weight-old-mobile-id',
+          value: 80.5,
+          measuredAt: '2026-07-25T08:00',
+          createdAt: '2026-07-25T08:00:00.000Z'
+        }],
+        meals: []
+      };
+
+      localStorage.setItem(
+        storageKey,
+        JSON.stringify(legacyState)
+      );
+
+      let context = await loadFrame(
+        `../index.html?weight-test=${Date.now()}`
+      );
+
+      await waitForApp(context.appDocument);
+
+      await waitFor(() => {
+        const stored = JSON.parse(
+          localStorage.getItem(storageKey)
+        );
+        return uuidPattern.test(stored.weights[0].id);
+      });
+
+      let stored = JSON.parse(
+        localStorage.getItem(storageKey)
+      );
+      const migratedId = stored.weights[0].id;
+
+      assert(
+        uuidPattern.test(migratedId),
+        'migra l’identificador antic del mòbil a UUID'
+      );
+
+      assert(
+        stored.weights[0].value === 80.5 &&
+        stored.weights[0].measuredAt === '2026-07-25T08:00',
+        'conserva el valor i la data originals'
+      );
+
+      assert(
+        context.appDocument
+          .querySelector('#weightHistory')
+          .textContent.includes('80,5 kg'),
+        'mostra el pes migrat a la interfície'
+      );
+
+      context.appDocument
+        .querySelector('[data-weight-action="edit"]')
+        .click();
+
+      context.appDocument.querySelector('#weightInput').value =
+        '79,9';
+      context.appDocument.querySelector('#weightMeasuredAt').value =
+        '2026-07-26T08:30';
+
+      context.appDocument
+        .querySelector('#weightForm')
+        .dispatchEvent(
+          new context.appWindow.Event('submit', {
+            bubbles: true,
+            cancelable: true
+          })
+        );
+
+      await waitFor(() => {
+        const current = JSON.parse(
+          localStorage.getItem(storageKey)
+        ).weights[0];
+
+        return current.value === 79.9 &&
+          current.updatedAt !== current.createdAt;
+      });
+
+      stored = JSON.parse(localStorage.getItem(storageKey));
+
+      assert(
+        stored.weights[0].id === migratedId &&
+        stored.weights[0].value === 79.9,
+        'edita el pes mantenint la mateixa identitat'
+      );
+
+      context.appWindow.confirm = () => true;
+
+      context.appDocument
+        .querySelector('[data-weight-action="delete"]')
+        .click();
+
+      await waitFor(() =>
+        Boolean(
+          JSON.parse(localStorage.getItem(storageKey))
+            .weights[0].deletedAt
+        )
+      );
+
+      stored = JSON.parse(localStorage.getItem(storageKey));
+
+      assert(
+        stored.weights.length === 1 &&
+        Boolean(stored.weights[0].deletedAt),
+        'conserva el registre com a tombstone'
+      );
+
+      assert(
+        !context.appDocument
+          .querySelector('#weightHistory')
+          .textContent.includes('79,9 kg'),
+        'oculta el pes eliminat de la interfície'
+      );
+
+      await loadFrame('about:blank');
+      await delay(200);
+
+      context = await loadFrame(
+        `../index.html?weight-reload=${Date.now()}`
+      );
+
+      await waitForApp(context.appDocument);
+
+      assert(
+        !context.appDocument
+          .querySelector('#weightHistory')
+          .textContent.includes('79,9 kg'),
+        'manté el pes eliminat ocult després de reobrir'
+      );
+
+      stored = JSON.parse(localStorage.getItem(storageKey));
+
+      assert(
+        stored.weights[0].id === migratedId &&
+        Boolean(stored.weights[0].deletedAt),
+        'manté el tombstone disponible per sincronitzar'
+      );
+
+      await loadFrame('about:blank');
+      await delay(200);
+
+      if ('serviceWorker' in navigator) {
+        const registrations =
+          await navigator.serviceWorker.getRegistrations();
+        await Promise.all(
+          registrations.map(registration => registration.unregister())
+        );
+      }
+
+      await deleteDatabase(databaseName);
+      localStorage.clear();
+
+      messages.push('PASS — elimina totes les dades de prova');
+      output.textContent = messages.join('\n');
+    } catch (error) {
+      output.textContent =
+        `${messages.join('\n')}\nFAIL — ${error.message}`;
+      throw error;
+    }
+  </script>
+</body>
+</html>

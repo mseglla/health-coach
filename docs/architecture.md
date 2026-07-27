@@ -13,7 +13,13 @@ iPhone / navegador
 PWA ATLES
         │
         ▼
-IndexedDB (font local operativa)
+Repositoris de dades
+        │
+        ▼
+StorageService
+        │
+        ├── IndexedDB (font local operativa)
+        └── localStorage (còpia de seguretat)
         │
         ▼
 Motor de sincronització
@@ -42,10 +48,26 @@ Supabase
 
 - Interfície d’usuari.
 - Validació immediata dels formularis.
-- Persistència local.
+- Accés a les dades mitjançant repositoris.
 - Funcionament offline.
 - Cua de canvis pendents.
 - Lectura de l’estat de sincronització.
+
+### Repositoris de dades
+
+- Desacoblen la UI de la persistència i la sincronització.
+- Centralitzen creació, consulta, actualització i soft delete.
+- Generen UUID estables que s’utilitzen tant localment com a Supabase.
+- Conserven `created_at`, `updated_at` i `deleted_at`.
+- Exposen els tombstones al motor de sincronització, però no a la UI.
+- S’afegeixen incrementalment per entitat; `WeightRepository` és el primer pilot.
+
+### StorageService
+
+- Ofereix una interfície asíncrona comuna de persistència.
+- Utilitza IndexedDB com a font principal.
+- Manté localStorage com a còpia de seguretat durant la migració.
+- Permet substituir els adaptadors sense modificar els repositoris ni la UI.
 
 ### IndexedDB
 
@@ -85,10 +107,11 @@ Primera estratègia:
 
 ## Evolució prevista
 
-1. localStorage estable actual.
-2. Migració controlada a IndexedDB.
-3. Supabase Auth i esquema mínim.
-4. Sincronització d’una sola entitat: pesos.
-5. Extensió a àpats, activitats i resums.
-6. Previews i desplegament a Vercel.
-7. Integracions d’IA i salut.
+1. localStorage inicial estable — completat.
+2. Migració controlada a IndexedDB — completat.
+3. Supabase Auth i esquema mínim — completat.
+4. Repositori local de pesos — completat.
+5. Sincronització d’una sola entitat: pesos — següent pilot.
+6. Extensió a àpats, activitats i resums.
+7. Previews i desplegament a Vercel.
+8. Integracions d’IA i salut.

@@ -1,14 +1,25 @@
 import { createId, nowLocalDateTime, parseNumber, todayISO } from './calculations.js';
 import { exportState, storageService } from './storage.js';
 import { $, openScreen, renderApp, renderCharts, showToast } from './ui.js';
+import { WeightRepository } from './weight-repository.js';
 
 let state = await storageService.loadState();
 
-async function saveAndRender(message) {
-  await storageService.persistState(state);
+const weightRepository = new WeightRepository({
+  storageService
+});
+
+await weightRepository.initialize(state);
+
+function renderState(message) {
   renderApp(state, todayISO());
   if ($('stats').classList.contains('is-active')) renderCharts(state);
   if (message) showToast(message);
+}
+
+async function saveAndRender(message) {
+  await storageService.persistState(state);
+  renderState(message);
 }
 
 function upsertDay(data) {
@@ -60,15 +71,14 @@ $('weightForm').addEventListener('submit', async event => {
     return;
   }
 
-  if (recordId) {
-    const index = state.weights.findIndex(record => record.id === recordId);
-    if (index >= 0) state.weights[index] = { ...state.weights[index], value, measuredAt };
-  } else {
-    state.weights.push({ id: createId('weight'), value, measuredAt, createdAt: new Date().toISOString() });
-  }
-  state.weights.sort((a, b) => a.measuredAt.localeCompare(b.measuredAt));
+  await weightRepository.save(state, {
+    id: recordId || null,
+    value,
+    measuredAt
+  });
+
   resetWeightForm();
-  await saveAndRender(recordId ? 'Pes actualitzat' : 'Pes guardat');
+  renderState(recordId ? 'Pes actualitzat' : 'Pes guardat');
 });
 
 $('cancelWeightEdit').addEventListener('click', resetWeightForm);
@@ -76,7 +86,10 @@ $('cancelWeightEdit').addEventListener('click', resetWeightForm);
 $('weightHistory').addEventListener('click', async event => {
   const button = event.target.closest('[data-weight-action]');
   if (!button) return;
-  const record = state.weights.find(item => item.id === button.dataset.id);
+  const record = weightRepository.findById(
+    state,
+    button.dataset.id
+  );
   if (!record) return;
 
   if (button.dataset.weightAction === 'edit') {
@@ -89,9 +102,9 @@ $('weightHistory').addEventListener('click', async event => {
   }
 
   if (button.dataset.weightAction === 'delete' && window.confirm('Vols eliminar aquest registre de pes?')) {
-    state.weights = state.weights.filter(item => item.id !== record.id);
+    await weightRepository.softDelete(state, record.id);
     if ($('weightRecordId').value === record.id) resetWeightForm();
-    await saveAndRender('Pes eliminat');
+    renderState('Pes eliminat');
   }
 });
 

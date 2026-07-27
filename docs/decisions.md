@@ -8,11 +8,11 @@ ATLES funcionarà sobre dades locals i sincronitzarà amb Supabase. La xarxa no 
 
 **Motiu:** l’app s’utilitza principalment al mòbil i ha de continuar funcionant amb connexió inestable.
 
-## ADR-002 — IndexedDB com a persistència futura
+## ADR-002 — IndexedDB com a persistència principal
 
-**Estat:** acceptada, pendent d’implementació.
+**Estat:** acceptada i implementada.
 
-localStorage es manté a la versió estable fins tenir una migració provada. IndexedDB serà la persistència principal de la nova base.
+IndexedDB és la persistència principal. localStorage es manté temporalment com a còpia de seguretat mitjançant escriptura dual i recuperació provada.
 
 **Motiu:** millor capacitat, transaccions i estructura per a una PWA local-first.
 
@@ -50,9 +50,9 @@ GitHub Pages es manté temporalment. Vercel s’introduirà quan tinguem `develo
 
 ## ADR-008 — Soft delete i UUID
 
-**Estat:** proposta acceptada a nivell d’arquitectura; pendent de validar a l’esquema SQL.
+**Estat:** acceptada, validada a l’esquema SQL i implementada per als pesos locals.
 
-Els registres sincronitzables utilitzaran UUID i `deleted_at` per evitar pèrdues i permetre propagar eliminacions.
+Els registres sincronitzables utilitzen UUID i `deleted_at` per evitar pèrdues i permetre propagar eliminacions. Els identificadors antics dels pesos es migren una sola vegada a UUID i es persisteixen abans de sincronitzar.
 
 ## ADR-009 — Apple Health no és una funció web directa
 
@@ -81,3 +81,23 @@ ATLES utilitzarà inicialment Supabase Auth amb correu i contrasenya. La confirm
 - Caldrà implementar registre, confirmació, inici i tancament de sessió i recuperació de contrasenya.
 - Magic link i altres proveïdors es podran afegir posteriorment sense modificar el model de dades funcional.
 - L’autenticació necessita connexió, però les funcionalitats locals d’ATLES no han de quedar bloquejades permanentment per l’absència de xarxa.
+
+## ADR-011 — Repositoris de dades entre la UI i la persistència
+
+**Estat:** acceptada i implementada inicialment per als pesos.
+
+La UI no ha de crear, editar ni eliminar directament els registres sincronitzables. Cada entitat disposarà progressivament d’un repositori que centralitzi les operacions locals i les metadades necessàries per sincronitzar.
+
+**Motiu:** separar la UI de StorageService i del futur Sync Engine permet canviar la persistència o afegir Supabase sense duplicar lògica ni acoblar la xarxa als formularis.
+
+**Alternatives descartades:**
+
+- Connectar `app.js` directament amb Supabase, perquè trencaria l’arquitectura local-first.
+- Crear ara un repositori genèric per a totes les entitats, perquè introduiria un refactor massa gran abans de validar el pilot.
+
+**Conseqüències:**
+
+- `WeightRepository` és el primer repositori i serveix com a patró.
+- Els pesos utilitzen el mateix UUID localment i remotament.
+- Les eliminacions són soft delete i es conserven com a tombstones.
+- Àpats, activitats i altres entitats adoptaran el patró incrementalment.

@@ -1,4 +1,5 @@
 import {
+  activeWeightRecords,
   averageWeight,
   burnSource,
   dailyWeightSeries,
@@ -55,7 +56,9 @@ function updateOrbit(state, day, decision) {
 }
 
 function renderWeightHistory(state) {
-  const records = [...state.weights].sort((a, b) => b.measuredAt.localeCompare(a.measuredAt)).slice(0, 12);
+  const records = activeWeightRecords(state.weights)
+    .sort((a, b) => b.measuredAt.localeCompare(a.measuredAt))
+    .slice(0, 12);
   $('weightHistory').innerHTML = records.map(record => `
     <article class="record-row">
       <div class="record-row__main">
