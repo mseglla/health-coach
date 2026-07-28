@@ -2,6 +2,10 @@ import { createId, nowLocalDateTime, parseNumber, todayISO } from './calculation
 import { exportState, storageService } from './storage.js';
 import { $, openScreen, renderApp, renderCharts, showToast } from './ui.js';
 import { WeightRepository } from './weight-repository.js';
+import {
+  createAuthUi,
+  hasAuthCallback
+} from './auth-ui.js';
 
 let state = await storageService.loadState();
 
@@ -10,6 +14,10 @@ const weightRepository = new WeightRepository({
 });
 
 await weightRepository.initialize(state);
+
+const authUi = createAuthUi({
+  notify: showToast
+});
 
 function renderState(message) {
   renderApp(state, todayISO());
@@ -201,7 +209,14 @@ $('importDataFile').addEventListener('change', async event => {
 document.querySelectorAll('[data-screen]').forEach(button => {
   button.addEventListener('click', () => {
     openScreen(button.dataset.screen);
-    if (button.dataset.screen === 'stats') window.requestAnimationFrame(() => renderCharts(state));
+
+    if (button.dataset.screen === 'settings') {
+      authUi.initialize().catch(() => {});
+    }
+
+    if (button.dataset.screen === 'stats') {
+      window.requestAnimationFrame(() => renderCharts(state));
+    }
   });
 });
 
@@ -220,3 +235,8 @@ if ('serviceWorker' in navigator && location.protocol !== 'file:') {
 resetWeightForm();
 resetMealForm();
 renderApp(state, todayISO());
+
+if (hasAuthCallback()) {
+  openScreen('settings');
+  authUi.initialize().catch(() => {});
+}
