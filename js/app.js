@@ -2,6 +2,8 @@ import { createId, nowLocalDateTime, parseNumber, todayISO } from './calculation
 import { exportState, storageService } from './storage.js';
 import { $, openScreen, renderApp, renderCharts, showToast } from './ui.js';
 import { WeightRepository } from './weight-repository.js';
+import { SupabaseWeightRepository } from './supabase-weight-repository.js';
+import { authService } from './auth-service.js';
 import {
   createAuthUi,
   hasAuthCallback
@@ -9,14 +11,42 @@ import {
 
 let state = await storageService.loadState();
 
-const weightRepository = new WeightRepository({
+const localWeightRepository = new WeightRepository({
   storageService
 });
+const remoteWeightRepository = new SupabaseWeightRepository({
+  clientFactory: () => authService.getClient()
+});
 
-await weightRepository.initialize(state);
+await localWeightRepository.initialize(state);
+
+let localWeights = state.weights;
+let weightRepository = localWeightRepository;
+let activeWeightUserId = null;
+
+async function handleSessionChange(session) {
+  const userId = session?.user?.id || null;
+  if (userId === activeWeightUserId) return;
+
+  if (!userId) {
+    activeWeightUserId = null;
+    weightRepository = localWeightRepository;
+    state.weights = localWeights;
+    resetWeightForm();
+    renderState();
+    return;
+  }
+
+  await remoteWeightRepository.initialize(state, { userId });
+  activeWeightUserId = userId;
+  weightRepository = remoteWeightRepository;
+  resetWeightForm();
+  renderState();
+}
 
 const authUi = createAuthUi({
-  notify: showToast
+  notify: showToast,
+  onSessionChange: handleSessionChange
 });
 
 function renderState(message) {
@@ -26,7 +56,11 @@ function renderState(message) {
 }
 
 async function saveAndRender(message) {
-  await storageService.persistState(state);
+  const stateToPersist = activeWeightUserId
+    ? { ...state, weights: localWeights }
+    : state;
+
+  await storageService.persistState(stateToPersist);
   renderState(message);
 }
 
@@ -79,14 +113,20 @@ $('weightForm').addEventListener('submit', async event => {
     return;
   }
 
-  await weightRepository.save(state, {
-    id: recordId || null,
-    value,
-    measuredAt
-  });
+  try {
+    await weightRepository.save(state, {
+      id: recordId || null,
+      value,
+      measuredAt
+    });
 
-  resetWeightForm();
-  renderState(recordId ? 'Pes actualitzat' : 'Pes guardat');
+    if (!activeWeightUserId) localWeights = state.weights;
+    resetWeightForm();
+    renderState(recordId ? 'Pes actualitzat' : 'Pes guardat');
+  } catch (error) {
+    console.error('Weight save failed', error);
+    showToast(error.message || 'No s’ha pogut guardar el pes');
+  }
 });
 
 $('cancelWeightEdit').addEventListener('click', resetWeightForm);
@@ -110,9 +150,15 @@ $('weightHistory').addEventListener('click', async event => {
   }
 
   if (button.dataset.weightAction === 'delete' && window.confirm('Vols eliminar aquest registre de pes?')) {
-    await weightRepository.softDelete(state, record.id);
-    if ($('weightRecordId').value === record.id) resetWeightForm();
-    renderState('Pes eliminat');
+    try {
+      await weightRepository.softDelete(state, record.id);
+      if (!activeWeightUserId) localWeights = state.weights;
+      if ($('weightRecordId').value === record.id) resetWeightForm();
+      renderState('Pes eliminat');
+    } catch (error) {
+      console.error('Weight delete failed', error);
+      showToast(error.message || 'No s’ha pogut eliminar el pes');
+    }
   }
 });
 
@@ -235,6 +281,8 @@ if ('serviceWorker' in navigator && location.protocol !== 'file:') {
 resetWeightForm();
 resetMealForm();
 renderApp(state, todayISO());
+
+authUi.initialize().catch(() => {});
 
 if (hasAuthCallback()) {
   openScreen('settings');
