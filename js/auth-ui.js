@@ -48,11 +48,13 @@ export class AuthUiController {
   constructor({
     service,
     elements,
-    notify = () => {}
+    notify = () => {},
+    onSessionChange = () => {}
   }) {
     this.service = service;
     this.elements = elements;
     this.notify = notify;
+    this.onSessionChange = onSessionChange;
     this.session = null;
     this.recoveryMode = false;
     this.initialized = false;
@@ -104,6 +106,16 @@ export class AuthUiController {
     );
   }
 
+  notifySessionChange() {
+    return Promise.resolve(
+      this.onSessionChange(this.session)
+    ).catch(error => {
+      this.notify(
+        error?.message || 'No s’han pogut carregar els pesos del compte'
+      );
+    });
+  }
+
   setStatus(label, tone) {
     this.elements.status.textContent = label;
     this.elements.status.className =
@@ -142,7 +154,7 @@ export class AuthUiController {
     if (signedIn) {
       this.setStatus('CONNECTAT', 'good');
       this.elements.description.textContent =
-        'La sessió està preparada. La sincronització de pesos s’activarà en el pilot següent.';
+        'Els pesos del compte es guarden i es carreguen des de Supabase.';
       this.elements.userEmail.textContent =
         this.session.user?.email || '';
       return;
@@ -187,6 +199,7 @@ export class AuthUiController {
             }
 
             this.render();
+            this.notifySessionChange();
           }
         );
 
@@ -199,6 +212,7 @@ export class AuthUiController {
 
         this.initialized = true;
         this.render();
+        await this.notifySessionChange();
       } catch (error) {
         this.renderConnectionError();
         throw error;
@@ -239,6 +253,7 @@ export class AuthUiController {
       this.session = session;
       this.elements.password.value = '';
       this.render();
+      await this.notifySessionChange();
       this.notify('Sessió iniciada correctament');
     });
   }
@@ -264,6 +279,7 @@ export class AuthUiController {
       if (data?.session) {
         this.session = data.session;
         this.render();
+        await this.notifySessionChange();
         this.notify('Compte creat i sessió iniciada');
       } else {
         this.notify(
@@ -293,6 +309,7 @@ export class AuthUiController {
       this.session = null;
       this.recoveryMode = false;
       this.render();
+      await this.notifySessionChange();
       this.notify('Sessió tancada');
     });
   }
@@ -327,11 +344,13 @@ export class AuthUiController {
 export function createAuthUi({
   service = authService,
   documentRef = document,
-  notify
+  notify,
+  onSessionChange
 } = {}) {
   return new AuthUiController({
     service,
     notify,
+    onSessionChange,
     elements: {
       status: documentRef.getElementById('authStatus'),
       description:
