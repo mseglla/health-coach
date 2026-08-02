@@ -37,9 +37,18 @@ async function handleSessionChange(session) {
     return;
   }
 
-  await remoteWeightRepository.initialize(state, { userId });
   activeWeightUserId = userId;
   weightRepository = remoteWeightRepository;
+
+  try {
+    await remoteWeightRepository.initialize(state, { userId });
+  } catch (error) {
+    state.weights = [];
+    resetWeightForm();
+    renderState();
+    throw error;
+  }
+
   resetWeightForm();
   renderState();
 }
