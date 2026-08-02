@@ -1,14 +1,76 @@
 import { createId, nowLocalDateTime, parseNumber, todayISO } from './calculations.js';
-import { exportState, loadState, persistState } from './storage.js';
+import { exportState, storageService } from './storage.js';
 import { $, openScreen, renderApp, renderCharts, showToast } from './ui.js';
+import { WeightRepository } from './weight-repository.js';
+import { SupabaseWeightRepository } from './supabase-weight-repository.js';
+import { authService } from './auth-service.js';
+import {
+  createAuthUi,
+  hasAuthCallback
+} from './auth-ui.js';
 
-let state = loadState();
+let state = await storageService.loadState();
 
-function saveAndRender(message) {
-  persistState(state);
+const localWeightRepository = new WeightRepository({
+  storageService
+});
+const remoteWeightRepository = new SupabaseWeightRepository({
+  clientFactory: () => authService.getClient()
+});
+
+await localWeightRepository.initialize(state);
+
+let localWeights = state.weights;
+let weightRepository = localWeightRepository;
+let activeWeightUserId = null;
+
+async function handleSessionChange(session) {
+  const userId = session?.user?.id || null;
+  if (userId === activeWeightUserId) return;
+
+  if (!userId) {
+    activeWeightUserId = null;
+    weightRepository = localWeightRepository;
+    state.weights = localWeights;
+    resetWeightForm();
+    renderState();
+    return;
+  }
+
+  activeWeightUserId = userId;
+  weightRepository = remoteWeightRepository;
+
+  try {
+    await remoteWeightRepository.initialize(state, { userId });
+  } catch (error) {
+    state.weights = [];
+    resetWeightForm();
+    renderState();
+    throw error;
+  }
+
+  resetWeightForm();
+  renderState();
+}
+
+const authUi = createAuthUi({
+  notify: showToast,
+  onSessionChange: handleSessionChange
+});
+
+function renderState(message) {
   renderApp(state, todayISO());
   if ($('stats').classList.contains('is-active')) renderCharts(state);
   if (message) showToast(message);
+}
+
+async function saveAndRender(message) {
+  const stateToPersist = activeWeightUserId
+    ? { ...state, weights: localWeights }
+    : state;
+
+  await storageService.persistState(stateToPersist);
+  renderState(message);
 }
 
 function upsertDay(data) {
@@ -32,7 +94,7 @@ function resetMealForm() {
   $('mealLoggedAt').value = nowLocalDateTime();
 }
 
-$('dayForm').addEventListener('submit', event => {
+$('dayForm').addEventListener('submit', async event => {
   event.preventDefault();
   upsertDay({
     date: todayISO(),
@@ -41,11 +103,11 @@ $('dayForm').addEventListener('submit', event => {
     active: parseNumber($('activeInput').value),
     total: parseNumber($('totalInput').value)
   });
-  saveAndRender('Energia i activitat guardades');
+  await saveAndRender('Energia i activitat guardades');
   openScreen('home');
 });
 
-$('weightForm').addEventListener('submit', event => {
+$('weightForm').addEventListener('submit', async event => {
   event.preventDefault();
   const value = parseNumber($('weightInput').value);
   const measuredAt = $('weightMeasuredAt').value;
@@ -60,23 +122,31 @@ $('weightForm').addEventListener('submit', event => {
     return;
   }
 
-  if (recordId) {
-    const index = state.weights.findIndex(record => record.id === recordId);
-    if (index >= 0) state.weights[index] = { ...state.weights[index], value, measuredAt };
-  } else {
-    state.weights.push({ id: createId('weight'), value, measuredAt, createdAt: new Date().toISOString() });
+  try {
+    await weightRepository.save(state, {
+      id: recordId || null,
+      value,
+      measuredAt
+    });
+
+    if (!activeWeightUserId) localWeights = state.weights;
+    resetWeightForm();
+    renderState(recordId ? 'Pes actualitzat' : 'Pes guardat');
+  } catch (error) {
+    console.error('Weight save failed', error);
+    showToast(error.message || 'No s’ha pogut guardar el pes');
   }
-  state.weights.sort((a, b) => a.measuredAt.localeCompare(b.measuredAt));
-  resetWeightForm();
-  saveAndRender(recordId ? 'Pes actualitzat' : 'Pes guardat');
 });
 
 $('cancelWeightEdit').addEventListener('click', resetWeightForm);
 
-$('weightHistory').addEventListener('click', event => {
+$('weightHistory').addEventListener('click', async event => {
   const button = event.target.closest('[data-weight-action]');
   if (!button) return;
-  const record = state.weights.find(item => item.id === button.dataset.id);
+  const record = weightRepository.findById(
+    state,
+    button.dataset.id
+  );
   if (!record) return;
 
   if (button.dataset.weightAction === 'edit') {
@@ -89,13 +159,19 @@ $('weightHistory').addEventListener('click', event => {
   }
 
   if (button.dataset.weightAction === 'delete' && window.confirm('Vols eliminar aquest registre de pes?')) {
-    state.weights = state.weights.filter(item => item.id !== record.id);
-    if ($('weightRecordId').value === record.id) resetWeightForm();
-    saveAndRender('Pes eliminat');
+    try {
+      await weightRepository.softDelete(state, record.id);
+      if (!activeWeightUserId) localWeights = state.weights;
+      if ($('weightRecordId').value === record.id) resetWeightForm();
+      renderState('Pes eliminat');
+    } catch (error) {
+      console.error('Weight delete failed', error);
+      showToast(error.message || 'No s’ha pogut eliminar el pes');
+    }
   }
 });
 
-$('mealForm').addEventListener('submit', event => {
+$('mealForm').addEventListener('submit', async event => {
   event.preventDefault();
   const description = $('mealDescription').value.trim();
   const loggedAt = $('mealLoggedAt').value;
@@ -120,19 +196,19 @@ $('mealForm').addEventListener('submit', event => {
   });
   state.meals.sort((a, b) => a.loggedAt.localeCompare(b.loggedAt));
   resetMealForm();
-  saveAndRender('Àpat guardat');
+  await saveAndRender('Àpat guardat');
 });
 
-$('mealHistory').addEventListener('click', event => {
+$('mealHistory').addEventListener('click', async event => {
   const button = event.target.closest('[data-meal-action="delete"]');
   if (!button) return;
   if (window.confirm('Vols eliminar aquest àpat?')) {
     state.meals = state.meals.filter(meal => meal.id !== button.dataset.id);
-    saveAndRender('Àpat eliminat');
+    await saveAndRender('Àpat eliminat');
   }
 });
 
-$('settingsForm').addEventListener('submit', event => {
+$('settingsForm').addEventListener('submit', async event => {
   event.preventDefault();
   state.settings = {
     name: $('nameSetting').value.trim() || 'Marc',
@@ -142,15 +218,60 @@ $('settingsForm').addEventListener('submit', event => {
     goal: parseNumber($('goalSetting').value),
     targetDate: $('dateSetting').value
   };
-  saveAndRender('Configuració actualitzada');
+  await saveAndRender('Configuració actualitzada');
 });
 
 $('exportData').addEventListener('click', () => exportState(state));
 
+$('importData').addEventListener('click', () => {
+  $('importDataFile').click();
+});
+
+$('importDataFile').addEventListener('change', async event => {
+  const [file] = event.target.files;
+  if (!file) return;
+
+  const confirmed = window.confirm(
+    'Aquesta acció substituirà les dades actuals per les de la còpia seleccionada. Vols continuar?'
+  );
+
+  if (!confirmed) {
+    event.target.value = '';
+    return;
+  }
+
+  try {
+    const importedState = await storageService.importState(
+      await file.text()
+    );
+
+    state = importedState;
+    renderApp(state, todayISO());
+
+    if ($('stats').classList.contains('is-active')) {
+      renderCharts(state);
+    }
+
+    showToast('Còpia restaurada correctament');
+  } catch (error) {
+    console.error('Data import failed', error);
+    showToast(error.message || 'No s’ha pogut importar la còpia');
+  } finally {
+    event.target.value = '';
+  }
+});
+
 document.querySelectorAll('[data-screen]').forEach(button => {
   button.addEventListener('click', () => {
     openScreen(button.dataset.screen);
-    if (button.dataset.screen === 'stats') window.requestAnimationFrame(() => renderCharts(state));
+
+    if (button.dataset.screen === 'settings') {
+      authUi.initialize().catch(() => {});
+    }
+
+    if (button.dataset.screen === 'stats') {
+      window.requestAnimationFrame(() => renderCharts(state));
+    }
   });
 });
 
@@ -169,3 +290,10 @@ if ('serviceWorker' in navigator && location.protocol !== 'file:') {
 resetWeightForm();
 resetMealForm();
 renderApp(state, todayISO());
+
+authUi.initialize().catch(() => {});
+
+if (hasAuthCallback()) {
+  openScreen('settings');
+  authUi.initialize().catch(() => {});
+}

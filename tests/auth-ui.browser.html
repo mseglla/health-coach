@@ -1,0 +1,199 @@
+<!doctype html>
+<html lang="ca">
+<head>
+  <meta charset="utf-8">
+  <title>ATLES — Auth UI test</title>
+</head>
+<body>
+  <pre id="results">Executant proves...</pre>
+
+  <div id="fixture">
+    <span id="authStatus"></span>
+    <p id="authDescription"></p>
+
+    <div id="authSignedOut">
+      <form id="authForm">
+        <input id="authEmail" type="email" required>
+        <input id="authPassword" type="password" required>
+        <button id="authSignIn" type="submit">Entrar</button>
+        <button id="authSignUp" type="button">Crear</button>
+        <button id="authForgotPassword" type="button">Recuperar</button>
+      </form>
+    </div>
+
+    <div id="authSignedIn" hidden>
+      <span id="authUserEmail"></span>
+      <button id="authSignOut" type="button">Sortir</button>
+    </div>
+
+    <div id="authRecovery" hidden>
+      <form id="authRecoveryForm">
+        <input id="authNewPassword" type="password" minlength="10" required>
+        <button type="submit">Guardar</button>
+        <button id="authCancelRecovery" type="button">Cancel·lar</button>
+      </form>
+    </div>
+  </div>
+
+  <script type="module">
+    import { createAuthUi } from '../js/auth-ui.js';
+
+    const output = document.querySelector('#results');
+    const messages = [];
+    const notifications = [];
+    const calls = [];
+    let authListener = null;
+
+    const session = {
+      user: {
+        id: '11111111-1111-4111-8111-111111111111',
+        email: 'marc@example.com'
+      }
+    };
+
+    function assert(condition, message) {
+      if (!condition) throw new Error(message);
+      messages.push(`PASS — ${message}`);
+      output.textContent = messages.join('\n');
+    }
+
+    const service = {
+      async getSession() {
+        calls.push(['getSession']);
+        return null;
+      },
+
+      async subscribe(listener) {
+        calls.push(['subscribe']);
+        authListener = listener;
+        return { unsubscribe() {} };
+      },
+
+      async signUp(payload) {
+        calls.push(['signUp', payload]);
+        return {
+          user: session.user,
+          session: null
+        };
+      },
+
+      async signIn(payload) {
+        calls.push(['signIn', payload]);
+        return session;
+      },
+
+      async requestPasswordReset(email) {
+        calls.push(['requestPasswordReset', email]);
+      },
+
+      async signOut() {
+        calls.push(['signOut']);
+      },
+
+      async updatePassword(password) {
+        calls.push(['updatePassword', password]);
+        return session.user;
+      }
+    };
+
+    try {
+      const controller = createAuthUi({
+        service,
+        documentRef: document,
+        notify: message => notifications.push(message)
+      });
+
+      assert(
+        calls.length === 0 &&
+        document.querySelector('#authStatus').textContent ===
+          'MODE LOCAL',
+        'arrenca en mode local sense carregar Supabase'
+      );
+
+      await controller.initialize();
+
+      assert(
+        calls[0][0] === 'subscribe' &&
+        calls[1][0] === 'getSession',
+        'inicialitza Auth només quan es demana'
+      );
+
+      const email = document.querySelector('#authEmail');
+      const password =
+        document.querySelector('#authPassword');
+
+      email.value = 'marc@example.com';
+      password.value = 'StrongPassword1!';
+
+      await controller.signUp();
+
+      assert(
+        calls.at(-1)[0] === 'signUp' &&
+        notifications.at(-1).includes('confirma'),
+        'crea compte i demana confirmar el correu'
+      );
+
+      password.value = 'StrongPassword1!';
+      await controller.signIn();
+
+      assert(
+        document.querySelector('#authStatus').textContent ===
+          'CONNECTAT' &&
+        document.querySelector('#authUserEmail').textContent ===
+          'marc@example.com',
+        'mostra la sessió iniciada'
+      );
+
+      await controller.signOut();
+
+      assert(
+        document.querySelector('#authStatus').textContent ===
+          'MODE LOCAL',
+        'torna a mode local després de tancar sessió'
+      );
+
+      email.value = 'marc@example.com';
+      await controller.requestPasswordReset();
+
+      assert(
+        calls.at(-1)[0] === 'requestPasswordReset' &&
+        notifications.at(-1).includes('correu'),
+        'sol·licita recuperació de contrasenya'
+      );
+
+      authListener({
+        event: 'PASSWORD_RECOVERY',
+        session
+      });
+
+      assert(
+        document.querySelector('#authStatus').textContent ===
+          'RECUPERACIÓ' &&
+        !document.querySelector('#authRecovery').hidden,
+        'mostra el formulari de contrasenya nova'
+      );
+
+      document.querySelector('#authNewPassword').value =
+        'NewStrongPassword1!';
+
+      await controller.updatePassword();
+
+      assert(
+        calls.at(-1)[0] === 'updatePassword' &&
+        document.querySelector('#authStatus').textContent ===
+          'CONNECTAT',
+        'actualitza la contrasenya i conserva la sessió'
+      );
+
+      assert(
+        notifications.every(Boolean),
+        'informa del resultat de cada operació'
+      );
+    } catch (error) {
+      output.textContent =
+        `${messages.join('\n')}\nFAIL — ${error.message}`;
+      throw error;
+    }
+  </script>
+</body>
+</html>

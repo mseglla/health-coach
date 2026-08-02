@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="ca">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>IndexedDBAdapter test</title>
+</head>
+<body>
+  <pre id="results">Executant proves...</pre>
+
+  <script type="module">
+    import { IndexedDBAdapter } from '../js/indexeddb-adapter.js';
+
+    const output = document.querySelector('#results');
+    const databaseName = `atles-adapter-test-${crypto.randomUUID()}`;
+    const adapter = new IndexedDBAdapter({ databaseName });
+    const messages = [];
+
+    function assert(condition, message) {
+      if (!condition) throw new Error(message);
+      messages.push(`PASS — ${message}`);
+    }
+
+    function deleteDatabase(name) {
+      return new Promise((resolve, reject) => {
+        const request = indexedDB.deleteDatabase(name);
+        request.onsuccess = () => resolve();
+        request.onerror = () => reject(
+          request.error || new Error('No s’ha pogut eliminar la base de prova')
+        );
+        request.onblocked = () => reject(
+          new Error('L’eliminació de la base de prova ha quedat bloquejada')
+        );
+      });
+    }
+
+    try {
+      assert(
+        await adapter.getItem('missing') === null,
+        'una clau inexistent retorna null'
+      );
+
+      await adapter.setItem('healthCoachV3', '{"version":3}');
+
+      assert(
+        await adapter.getItem('healthCoachV3') === '{"version":3}',
+        'escriu i llegeix un valor'
+      );
+
+      await adapter.setItem('healthCoachV3', '{"version":4}');
+
+      assert(
+        await adapter.getItem('healthCoachV3') === '{"version":4}',
+        'actualitza un valor existent'
+      );
+
+      await adapter.close();
+      await deleteDatabase(databaseName);
+
+      messages.push('PASS — tanca i elimina la base de prova');
+      output.textContent = messages.join('\n');
+    } catch (error) {
+      await adapter.close();
+      output.textContent = `${messages.join('\n')}\nFAIL — ${error.message}`;
+      throw error;
+    }
+  </script>
+</body>
+</html>

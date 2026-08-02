@@ -1,0 +1,194 @@
+<!doctype html>
+<html lang="ca">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ATLES — storage recovery test</title>
+</head>
+<body>
+  <pre id="results">Executant proves...</pre>
+
+  <script type="module">
+    import { IndexedDBAdapter } from '../js/indexeddb-adapter.js';
+    import {
+      LocalStorageAdapter,
+      StorageService
+    } from '../js/storage.js';
+    import {
+      MigratingStorageAdapter
+    } from '../js/migrating-storage-adapter.js';
+
+    const output = document.querySelector('#results');
+    const databaseName =
+      `atles-recovery-test-${crypto.randomUUID()}`;
+    const storageKey = 'healthCoachV3';
+    const messages = [];
+
+    function assert(condition, message) {
+      if (!condition) throw new Error(message);
+      messages.push(`PASS — ${message}`);
+    }
+
+    function deleteDatabase(name) {
+      return new Promise((resolve, reject) => {
+        const request = indexedDB.deleteDatabase(name);
+
+        request.onsuccess = () => resolve();
+        request.onerror = () => reject(
+          request.error ||
+          new Error('No s’ha pogut eliminar la base de prova')
+        );
+        request.onblocked = () => reject(
+          new Error(
+            'L’eliminació de la base de prova ha quedat bloquejada'
+          )
+        );
+      });
+    }
+
+    class FailingAdapter {
+      async getItem() {
+        throw new Error('Simulated primary read failure');
+      }
+
+      async setItem() {
+        throw new Error('Simulated primary write failure');
+      }
+    }
+
+    const expectedState = {
+      version: 3,
+      settings: {
+        name: 'Recovery test',
+        age: 34,
+        height: 176,
+        sex: 'male',
+        goal: 78,
+        targetDate: '2026-12-31'
+      },
+      days: [{
+        date: '2026-07-25',
+        intake: 2100,
+        steps: 12000,
+        active: 650,
+        total: 2850
+      }],
+      weights: [{
+        id: 'recovery-weight',
+        value: 79.4,
+        measuredAt: '2026-07-25T08:00',
+        createdAt: '2026-07-25T08:00:00.000Z'
+      }],
+      meals: [{
+        id: 'recovery-meal',
+        description: 'Àpat de prova',
+        calories: 600,
+        loggedAt: '2026-07-25T14:00',
+        createdAt: '2026-07-25T14:00:00.000Z'
+      }]
+    };
+
+    let firstPrimary;
+    let reopenedPrimary;
+
+    try {
+      localStorage.removeItem(storageKey);
+
+      firstPrimary = new IndexedDBAdapter({ databaseName });
+
+      const firstAdapter = new MigratingStorageAdapter({
+        primary: firstPrimary,
+        fallback: new LocalStorageAdapter(),
+        onError: () => {}
+      });
+
+      const firstService = new StorageService(firstAdapter);
+      await firstService.persistState(expectedState);
+
+      assert(
+        localStorage.getItem(storageKey) !== null,
+        'crea la còpia de seguretat a localStorage'
+      );
+
+      await firstPrimary.close();
+      firstPrimary = null;
+
+      localStorage.removeItem(storageKey);
+
+      reopenedPrimary = new IndexedDBAdapter({ databaseName });
+
+      const reopenedAdapter = new MigratingStorageAdapter({
+        primary: reopenedPrimary,
+        fallback: new LocalStorageAdapter(),
+        onError: () => {}
+      });
+
+      const reopenedService = new StorageService(reopenedAdapter);
+      const reopenedState = await reopenedService.loadState();
+
+      assert(
+        JSON.stringify(reopenedState) ===
+          JSON.stringify(expectedState),
+        'recupera tot l’estat després de reobrir IndexedDB'
+      );
+
+      assert(
+        reopenedState.weights[0].id === 'recovery-weight' &&
+          reopenedState.meals[0].id === 'recovery-meal',
+        'conserva els registres originals sense alteracions'
+      );
+
+      await reopenedService.persistState(reopenedState);
+
+      assert(
+        localStorage.getItem(storageKey) !== null,
+        'recrea una còpia de seguretat local actualitzada'
+      );
+
+      const fallbackAdapter = new MigratingStorageAdapter({
+        primary: new FailingAdapter(),
+        fallback: new LocalStorageAdapter(),
+        onError: () => {}
+      });
+
+      const fallbackService = new StorageService(fallbackAdapter);
+      const fallbackState = await fallbackService.loadState();
+
+      assert(
+        JSON.stringify(fallbackState) ===
+          JSON.stringify(expectedState),
+        'recupera tot l’estat si IndexedDB deixa de funcionar'
+      );
+
+      const fallbackStatus = fallbackAdapter.getStatus();
+
+      assert(
+        !fallbackStatus.primaryAvailable &&
+          fallbackStatus.fallbackAvailable,
+        'identifica correctament el sistema disponible'
+      );
+
+      await reopenedPrimary.close();
+      reopenedPrimary = null;
+      await deleteDatabase(databaseName);
+      localStorage.removeItem(storageKey);
+
+      messages.push('PASS — elimina totes les dades de prova');
+      output.textContent = messages.join('\n');
+    } catch (error) {
+      try {
+        await firstPrimary?.close();
+        await reopenedPrimary?.close();
+        await deleteDatabase(databaseName);
+      } catch {}
+
+      localStorage.removeItem(storageKey);
+
+      output.textContent =
+        `${messages.join('\n')}\nFAIL — ${error.message}`;
+
+      throw error;
+    }
+  </script>
+</body>
+</html>

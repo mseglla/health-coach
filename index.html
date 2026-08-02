@@ -241,6 +241,80 @@
             <p class="screen-subtitle">Estimació inicial, ajustable amb dades reals.</p>
           </div>
         </header>
+        <section id="authCard" class="surface-card auth-card" aria-labelledby="authTitle">
+          <div class="auth-card__header">
+            <div>
+              <span class="section-kicker">COMPTE I SINCRONITZACIÓ</span>
+              <h2 id="authTitle">Protegeix les teves dades</h2>
+            </div>
+            <span id="authStatus" class="status-pill status-pill--neutral">MODE LOCAL</span>
+          </div>
+
+          <p id="authDescription" class="auth-card__description">
+            Les dades es guarden només en aquest dispositiu. Pots continuar utilitzant ATLES sense compte.
+          </p>
+
+          <div id="authSignedOut">
+            <form id="authForm" class="form-card">
+              <label class="field">
+                <span>Correu electrònic</span>
+                <div class="field__control">
+                  <input id="authEmail" type="email" autocomplete="email" required />
+                </div>
+              </label>
+
+              <label class="field">
+                <span>Contrasenya</span>
+                <div class="field__control">
+                  <input id="authPassword" type="password" autocomplete="current-password" required />
+                </div>
+                <small>Per crear un compte, la contrasenya ha de tenir un mínim de 10 caràcters.</small>
+              </label>
+
+              <button id="authSignIn" class="button button--primary" type="submit">
+                Iniciar sessió
+              </button>
+
+              <button id="authSignUp" class="button button--ghost" type="button">
+                Crear compte
+              </button>
+
+              <button id="authForgotPassword" class="button button--text" type="button">
+                He oblidat la contrasenya
+              </button>
+            </form>
+          </div>
+
+          <div id="authSignedIn" hidden>
+            <p class="auth-account-email">
+              Sessió iniciada com <strong id="authUserEmail"></strong>
+            </p>
+            <button id="authSignOut" class="button button--ghost" type="button">
+              Tancar sessió
+            </button>
+          </div>
+
+          <div id="authRecovery" hidden>
+            <form id="authRecoveryForm" class="form-card">
+              <label class="field">
+                <span>Contrasenya nova</span>
+                <div class="field__control">
+                  <input id="authNewPassword" type="password" autocomplete="new-password" minlength="10" required />
+                </div>
+                <small>Mínim 10 caràcters.</small>
+              </label>
+
+              <button class="button button--primary" type="submit">
+                Guardar contrasenya nova
+              </button>
+
+              <button id="authCancelRecovery" class="button button--ghost" type="button">
+                Cancel·lar
+              </button>
+            </form>
+          </div>
+        </section>
+
         <form id="settingsForm" class="surface-card form-card">
           <label class="field"><span>Nom</span><div class="field__control"><input id="nameSetting" placeholder="Marc" /></div></label>
           <div class="form-grid">
@@ -254,6 +328,8 @@
           </div>
           <button class="button button--primary" type="submit">Guardar configuració</button>
           <button id="exportData" class="button button--ghost" type="button">Exportar dades</button>
+          <button id="importData" class="button button--ghost" type="button">Importar còpia</button>
+          <input id="importDataFile" type="file" accept=".json,application/json" hidden />
         </form>
         <p class="legal-note">Si introdueixes calories totals, utilitzem aquesta dada. Si no, estimem la despesa amb metabolisme basal + calories actives. Les estimacions no substitueixen assessorament mèdic o nutricional.</p>
       </section>

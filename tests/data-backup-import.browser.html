@@ -1,0 +1,217 @@
+<!doctype html>
+<html lang="ca">
+<head>
+  <meta charset="utf-8">
+  <title>ATLES — diagnòstic d'importació</title>
+  <style>
+    body { font: 16px system-ui; padding: 24px; line-height: 1.6; }
+    .ok { color: #087830; }
+    .error { color: #b00020; }
+    pre { background: #f4f4f4; padding: 12px; white-space: pre-wrap; }
+    iframe { width: 1px; height: 1px; border: 0; opacity: 0; }
+  </style>
+</head>
+<body>
+  <h1>Diagnòstic d’importació ATLES</h1>
+  <pre id="results"></pre>
+  <iframe id="appFrame"></iframe>
+
+  <script>
+    const output = document.getElementById('results');
+    const frame = document.getElementById('appFrame');
+    const lines = [];
+
+    function log(message) {
+      lines.push(message);
+      output.textContent = lines.join('\n');
+    }
+
+    function delay(milliseconds) {
+      return new Promise(resolve => setTimeout(resolve, milliseconds));
+    }
+
+    async function waitForAppReady(appDocument, timeout = 10000) {
+      const startedAt = Date.now();
+
+      while (Date.now() - startedAt < timeout) {
+        const nameInput = appDocument.getElementById('nameSetting');
+        const weightInput =
+          appDocument.getElementById('weightMeasuredAt');
+
+        if (nameInput?.value && weightInput?.value) {
+          return;
+        }
+
+        await delay(50);
+      }
+
+      throw new Error(
+        'ATLES no ha acabat la inicialització asíncrona'
+      );
+    }
+
+    frame.addEventListener('load', async () => {
+      try {
+        log('OK 1 — iframe carregat');
+
+        const appWindow = frame.contentWindow;
+        const appDocument = frame.contentDocument;
+        const fileInput = appDocument.getElementById('importDataFile');
+        const toast = appDocument.getElementById('toast');
+
+        log(`OK 2 — input trobat: ${Boolean(fileInput)}`);
+        log(`OK 3 — toast trobat: ${Boolean(toast)}`);
+
+        await waitForAppReady(appDocument);
+        log('OK 3B — ATLES inicialitzat');
+
+        if (!fileInput) {
+          throw new Error('No existeix importDataFile');
+        }
+
+        let confirmCalls = 0;
+        appWindow.confirm = () => {
+          confirmCalls += 1;
+          return true;
+        };
+
+        let observedChanges = 0;
+        fileInput.addEventListener('change', () => {
+          observedChanges += 1;
+          log(`OK 4 — change observat (${observedChanges})`);
+        });
+
+        const backup = {
+          version: 3,
+          settings: {
+            name: 'Prova restauració',
+            age: 34,
+            height: 176,
+            sex: 'male',
+            goal: 78,
+            targetDate: '2026-12-31'
+          },
+          days: [],
+          weights: [{
+            id: 'browser-import-test',
+            value: 79.4,
+            measuredAt: '2026-07-25T08:00',
+            createdAt: '2026-07-25T08:00:00.000Z'
+          }],
+          meals: []
+        };
+
+        const transfer = new appWindow.DataTransfer();
+        transfer.items.add(new appWindow.File(
+          [JSON.stringify(backup)],
+          'atles-valid-backup.json',
+          { type: 'application/json' }
+        ));
+
+        fileInput.files = transfer.files;
+
+        log(`OK 5 — fitxers assignats: ${fileInput.files.length}`);
+
+        fileInput.dispatchEvent(
+          new appWindow.Event('change', { bubbles: true })
+        );
+
+        log('OK 6 — change enviat');
+
+        await delay(2500);
+
+        const stored =
+          appWindow.localStorage.getItem('healthCoachV3');
+
+        log(`DIAGNÒSTIC — confirmacions: ${confirmCalls}`);
+        log(`DIAGNÒSTIC — events change: ${observedChanges}`);
+        log(`DIAGNÒSTIC — toast: ${toast?.textContent || '(buit)'}`);
+        log(`DIAGNÒSTIC — localStorage: ${stored || '(buit)'}`);
+
+        if (
+          !stored ||
+          JSON.parse(stored).weights?.[0]?.id !==
+            'browser-import-test'
+        ) {
+          throw new Error(
+            'La importació vàlida no ha quedat persistida'
+          );
+        }
+
+        log('PASS — importació vàlida completada');
+
+        const storedBeforeInvalidImport = stored;
+        const invalidTransfer = new appWindow.DataTransfer();
+
+        invalidTransfer.items.add(new appWindow.File(
+          ['{ JSON invàlid'],
+          'atles-invalid-backup.json',
+          { type: 'application/json' }
+        ));
+
+        fileInput.files = invalidTransfer.files;
+        fileInput.dispatchEvent(
+          new appWindow.Event('change', { bubbles: true })
+        );
+
+        await delay(1000);
+
+        const storedAfterInvalidImport =
+          appWindow.localStorage.getItem('healthCoachV3');
+
+        log(
+          `DIAGNÒSTIC — toast invàlid: ${
+            toast?.textContent || '(buit)'
+          }`
+        );
+
+        if (
+          !toast?.textContent.includes('JSON vàlid')
+        ) {
+          throw new Error(
+            'No s’ha mostrat l’error esperat per al JSON invàlid'
+          );
+        }
+
+        if (
+          storedAfterInvalidImport !==
+          storedBeforeInvalidImport
+        ) {
+          throw new Error(
+            'La importació invàlida ha alterat les dades'
+          );
+        }
+
+        log('PASS — JSON invàlid rebutjat');
+        log('PASS — dades anteriors conservades');
+        log('PASS — flux de restauració verificat al navegador');
+      } catch (error) {
+        console.error(error);
+        log(`ERROR — ${error.name}: ${error.message}`);
+      }
+    });
+
+    async function start() {
+      if ('serviceWorker' in navigator) {
+        const registrations =
+          await navigator.serviceWorker.getRegistrations();
+
+        await Promise.all(
+          registrations.map(registration => registration.unregister())
+        );
+      }
+
+      if ('caches' in window) {
+        const names = await caches.keys();
+        await Promise.all(names.map(name => caches.delete(name)));
+      }
+
+      frame.src = `../index.html?diagnostic=${Date.now()}`;
+    }
+
+    start().catch(error => {
+      log(`ERROR INICIAL — ${error.message}`);
+    });
+  </script>
+</body>
+</html>
