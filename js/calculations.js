@@ -70,16 +70,8 @@ export function burnSource(day) {
   return day?.total != null ? 'Apple Watch' : day?.active != null ? 'estimades' : '';
 }
 
-export function mealCaloriesForDate(state, date) {
-  const values = (state.meals || [])
-    .filter(meal => recordDate(meal.loggedAt) === date && meal.calories != null)
-    .map(meal => Number(meal.calories));
-  return values.length ? Math.round(values.reduce((sum, value) => sum + value, 0)) : null;
-}
-
-export function totalIntake(state, day) {
-  if (day?.intake != null) return Math.round(day.intake);
-  return mealCaloriesForDate(state, day?.date);
+export function totalIntake(_state, day) {
+  return day?.intake != null ? Math.round(day.intake) : null;
 }
 
 export function averageWeight(weights, count = 7, offset = 0) {

@@ -78,13 +78,6 @@
         value: 79.4,
         measuredAt: '2026-07-25T08:00',
         createdAt: '2026-07-25T08:00:00.000Z'
-      }],
-      meals: [{
-        id: 'recovery-meal',
-        description: 'Àpat de prova',
-        calories: 600,
-        loggedAt: '2026-07-25T14:00',
-        createdAt: '2026-07-25T14:00:00.000Z'
       }]
     };
 
@@ -133,8 +126,7 @@
       );
 
       assert(
-        reopenedState.weights[0].id === 'recovery-weight' &&
-          reopenedState.meals[0].id === 'recovery-meal',
+        reopenedState.weights[0].id === 'recovery-weight',
         'conserva els registres originals sense alteracions'
       );
 
