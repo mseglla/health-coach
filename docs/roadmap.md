@@ -36,16 +36,14 @@ La prioritat és construir una base fiable. No s’afegeixen funcionalitats gran
 - [x] Crear migracions SQL versionades.
 - [x] Crear `profiles`, `goals` i `weight_logs`.
 - [x] Activar i provar RLS.
-- [ ] Sincronitzar només pesos com a pilot.
-- [ ] Provar offline, conflictes i recuperació.
+- [x] Sincronitzar pesos com a pilot.
+- [ ] Sincronitzar resums diaris.
+- [x] Simplificar el comportament sense connexió, sense cues ni conflictes.
 
 ## Fase 4 — Sincronització completa
 
-- [ ] Àpats.
 - [ ] Activitats.
-- [ ] Resums diaris.
 - [ ] Estat visible de sincronització.
-- [ ] Reintents i registre d’errors.
 - [ ] Recuperació en un segon dispositiu.
 
 ## Fase 5 — Nova interfície v0.4
@@ -72,8 +70,6 @@ Cada bloc necessita preview i prova real abans de passar al següent.
 ## Fase 7 — Funcionalitats avançades
 
 - Apple Health mitjançant app nativa o wrapper adequat.
-- IA per interpretar àpats.
-- Fotos d’àpats.
 - Predicció de pes.
 - Informes compartibles.
 - Coach adaptatiu.

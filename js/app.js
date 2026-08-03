@@ -1,8 +1,9 @@
-import { createId, nowLocalDateTime, parseNumber, todayISO } from './calculations.js';
+import { nowLocalDateTime, parseNumber, todayISO } from './calculations.js';
 import { exportState, storageService } from './storage.js';
 import { $, openScreen, renderApp, renderCharts, showToast } from './ui.js';
 import { WeightRepository } from './weight-repository.js';
 import { SupabaseWeightRepository } from './supabase-weight-repository.js';
+import { SupabaseDailySummaryRepository } from './supabase-daily-summary-repository.js';
 import { authService } from './auth-service.js';
 import {
   createAuthUi,
@@ -17,33 +18,45 @@ const localWeightRepository = new WeightRepository({
 const remoteWeightRepository = new SupabaseWeightRepository({
   clientFactory: () => authService.getClient()
 });
+const remoteDailySummaryRepository = new SupabaseDailySummaryRepository({
+  clientFactory: () => authService.getClient()
+});
 
 await localWeightRepository.initialize(state);
 
 let localWeights = state.weights;
+let localDays = state.days;
 let weightRepository = localWeightRepository;
-let activeWeightUserId = null;
+let activeUserId = null;
 
 async function handleSessionChange(session) {
   const userId = session?.user?.id || null;
-  if (userId === activeWeightUserId) return;
+  if (userId === activeUserId) return;
 
   if (!userId) {
-    activeWeightUserId = null;
+    activeUserId = null;
     weightRepository = localWeightRepository;
     state.weights = localWeights;
+    state.days = localDays;
     resetWeightForm();
     renderState();
     return;
   }
 
-  activeWeightUserId = userId;
+  activeUserId = userId;
   weightRepository = remoteWeightRepository;
 
   try {
-    await remoteWeightRepository.initialize(state, { userId });
+    const remoteState = { ...state, weights: [], days: [] };
+    await Promise.all([
+      remoteWeightRepository.initialize(remoteState, { userId }),
+      remoteDailySummaryRepository.initialize(remoteState, { userId })
+    ]);
+    state.weights = remoteState.weights;
+    state.days = remoteState.days;
   } catch (error) {
     state.weights = [];
+    state.days = [];
     resetWeightForm();
     renderState();
     throw error;
@@ -65,8 +78,8 @@ function renderState(message) {
 }
 
 async function saveAndRender(message) {
-  const stateToPersist = activeWeightUserId
-    ? { ...state, weights: localWeights }
+  const stateToPersist = activeUserId
+    ? { ...state, weights: localWeights, days: localDays }
     : state;
 
   await storageService.persistState(stateToPersist);
@@ -88,23 +101,30 @@ function resetWeightForm() {
   $('cancelWeightEdit').hidden = true;
 }
 
-function resetMealForm() {
-  $('mealDescription').value = '';
-  $('mealCalories').value = '';
-  $('mealLoggedAt').value = nowLocalDateTime();
-}
-
 $('dayForm').addEventListener('submit', async event => {
   event.preventDefault();
-  upsertDay({
+  const data = {
     date: todayISO(),
     steps: parseNumber($('stepsInput').value),
     intake: parseNumber($('intakeInput').value),
     active: parseNumber($('activeInput').value),
     total: parseNumber($('totalInput').value)
-  });
-  await saveAndRender('Energia i activitat guardades');
-  openScreen('home');
+  };
+
+  try {
+    if (activeUserId) {
+      await remoteDailySummaryRepository.save(state, data);
+      renderState('Energia i activitat guardades');
+    } else {
+      upsertDay(data);
+      localDays = state.days;
+      await saveAndRender('Energia i activitat guardades');
+    }
+    openScreen('home');
+  } catch (error) {
+    console.error('Daily summary save failed', error);
+    showToast(error.message || 'No s’ha pogut guardar el resum diari');
+  }
 });
 
 $('weightForm').addEventListener('submit', async event => {
@@ -129,7 +149,7 @@ $('weightForm').addEventListener('submit', async event => {
       measuredAt
     });
 
-    if (!activeWeightUserId) localWeights = state.weights;
+    if (!activeUserId) localWeights = state.weights;
     resetWeightForm();
     renderState(recordId ? 'Pes actualitzat' : 'Pes guardat');
   } catch (error) {
@@ -161,50 +181,13 @@ $('weightHistory').addEventListener('click', async event => {
   if (button.dataset.weightAction === 'delete' && window.confirm('Vols eliminar aquest registre de pes?')) {
     try {
       await weightRepository.softDelete(state, record.id);
-      if (!activeWeightUserId) localWeights = state.weights;
+      if (!activeUserId) localWeights = state.weights;
       if ($('weightRecordId').value === record.id) resetWeightForm();
       renderState('Pes eliminat');
     } catch (error) {
       console.error('Weight delete failed', error);
       showToast(error.message || 'No s’ha pogut eliminar el pes');
     }
-  }
-});
-
-$('mealForm').addEventListener('submit', async event => {
-  event.preventDefault();
-  const description = $('mealDescription').value.trim();
-  const loggedAt = $('mealLoggedAt').value;
-  const calories = parseNumber($('mealCalories').value);
-
-  if (!description) {
-    showToast('Explica què has menjat');
-    return;
-  }
-  if (!loggedAt) {
-    showToast('Indica la data i l’hora');
-    return;
-  }
-
-  state.meals.push({
-    id: createId('meal'),
-    description,
-    calories,
-    loggedAt,
-    createdAt: new Date().toISOString(),
-    source: calories == null ? 'text_pending_estimate' : 'manual_estimate'
-  });
-  state.meals.sort((a, b) => a.loggedAt.localeCompare(b.loggedAt));
-  resetMealForm();
-  await saveAndRender('Àpat guardat');
-});
-
-$('mealHistory').addEventListener('click', async event => {
-  const button = event.target.closest('[data-meal-action="delete"]');
-  if (!button) return;
-  if (window.confirm('Vols eliminar aquest àpat?')) {
-    state.meals = state.meals.filter(meal => meal.id !== button.dataset.id);
-    await saveAndRender('Àpat eliminat');
   }
 });
 
@@ -288,7 +271,6 @@ if ('serviceWorker' in navigator && location.protocol !== 'file:') {
 }
 
 resetWeightForm();
-resetMealForm();
 renderApp(state, todayISO());
 
 authUi.initialize().catch(() => {});

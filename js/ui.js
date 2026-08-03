@@ -18,15 +18,6 @@ import { drawChart } from './charts.js';
 
 export const $ = id => document.getElementById(id);
 
-function escapeHtml(value) {
-  return String(value ?? '')
-    .replaceAll('&', '&amp;')
-    .replaceAll('<', '&lt;')
-    .replaceAll('>', '&gt;')
-    .replaceAll('"', '&quot;')
-    .replaceAll("'", '&#039;');
-}
-
 export function showToast(message) {
   const toast = $('toast');
   toast.textContent = message;
@@ -70,23 +61,6 @@ function renderWeightHistory(state) {
         <button class="mini-button mini-button--danger" type="button" data-weight-action="delete" data-id="${record.id}" aria-label="Eliminar pes">Eliminar</button>
       </div>
     </article>`).join('') || '<p class="empty-state">Encara no hi ha pesos registrats.</p>';
-}
-
-function renderMealHistory(state, today) {
-  const meals = [...state.meals].sort((a, b) => b.loggedAt.localeCompare(a.loggedAt)).slice(0, 12);
-  $('mealHistory').innerHTML = meals.map(meal => `
-    <article class="record-row record-row--meal">
-      <div class="record-row__main">
-        <strong>${escapeHtml(meal.description)}</strong>
-        <span>${formatDateTime(meal.loggedAt)}${meal.calories != null ? ` · ${Math.round(meal.calories)} kcal` : ''}</span>
-      </div>
-      <div class="record-row__actions">
-        <button class="mini-button mini-button--danger" type="button" data-meal-action="delete" data-id="${meal.id}" aria-label="Eliminar àpat">Eliminar</button>
-      </div>
-    </article>`).join('') || '<p class="empty-state">Encara no hi ha àpats registrats.</p>';
-
-  const todayCount = state.meals.filter(meal => meal.loggedAt.startsWith(today)).length;
-  $('mealCountChip').textContent = `${todayCount} avui`;
 }
 
 function renderRecentDays(state) {
@@ -140,7 +114,6 @@ export function renderApp(state, today) {
   $('dateSetting').value = state.settings.targetDate ?? '';
 
   renderWeightHistory(state);
-  renderMealHistory(state, today);
   renderRecentDays(state);
 }
 

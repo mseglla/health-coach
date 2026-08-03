@@ -31,7 +31,6 @@ const state = {
   version: 3,
   settings: {},
   days: [],
-  meals: [],
   weights: [
     {
       id: 'weight-old-format',
