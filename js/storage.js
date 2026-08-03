@@ -47,8 +47,7 @@ function normalizeState(raw) {
           deletedAt: item.deletedAt || null
         };
       })
-      .sort((a, b) => a.measuredAt.localeCompare(b.measuredAt)),
-    meals: Array.isArray(raw.meals) ? raw.meals : []
+      .sort((a, b) => a.measuredAt.localeCompare(b.measuredAt))
   };
 }
 
@@ -77,7 +76,7 @@ export function parseImportedState(serializedState) {
     throw new Error('La còpia no conté una configuració vàlida');
   }
 
-  for (const key of ['days', 'weights', 'meals']) {
+  for (const key of ['days', 'weights']) {
     if (!Array.isArray(raw[key])) {
       throw new Error(`La còpia no conté una llista vàlida de ${key}`);
     }
@@ -105,25 +104,6 @@ export function parseImportedState(serializedState) {
 
   if (invalidWeight) {
     throw new Error('La còpia conté registres de pes invàlids');
-  }
-
-  const invalidMeal = raw.meals.some(meal => (
-    !isObject(meal) ||
-    typeof meal.id !== 'string' ||
-    !meal.id ||
-    typeof meal.description !== 'string' ||
-    !meal.description.trim() ||
-    typeof meal.loggedAt !== 'string' ||
-    !meal.loggedAt ||
-    (
-      meal.calories !== null &&
-      meal.calories !== undefined &&
-      !Number.isFinite(Number(meal.calories))
-    )
-  ));
-
-  if (invalidMeal) {
-    throw new Error('La còpia conté registres d’àpats invàlids');
   }
 
   return normalizeState(raw);

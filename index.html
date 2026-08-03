@@ -165,46 +165,10 @@
           <label class="field">
             <span>Calories ingerides totals</span>
             <div class="field__control"><input id="intakeInput" inputmode="numeric" placeholder="2050" /><em>kcal</em></div>
-            <small>És opcional si vas afegint calories als àpats: el total manual sempre tindrà prioritat.</small>
+            <small>Introdueix l’estimació total del dia.</small>
           </label>
           <button class="button button--primary" type="submit">Guardar energia i activitat</button>
         </form>
-
-        <form id="mealForm" class="surface-card form-card form-card--nutrition">
-          <div class="section-title-row section-title-row--form">
-            <div>
-              <span class="section-kicker section-kicker--nutrition">ÀPATS</span>
-              <h2>Explica què has menjat</h2>
-            </div>
-            <span class="chip">text lliure</span>
-          </div>
-          <label class="field">
-            <span>Descripció</span>
-            <div class="field__control field__control--textarea">
-              <textarea id="mealDescription" rows="4" placeholder="Ex.: 3 canelons petits amb beixamel, carbassó i patata al forn..."></textarea>
-            </div>
-            <small>Ara ho guardem. La interpretació automàtica amb IA arribarà en el següent bloc.</small>
-          </label>
-          <div class="form-grid">
-            <label class="field">
-              <span>Calories estimades</span>
-              <div class="field__control"><input id="mealCalories" inputmode="numeric" placeholder="Opcional" /><em>kcal</em></div>
-            </label>
-            <label class="field">
-              <span>Data i hora</span>
-              <div class="field__control"><input id="mealLoggedAt" type="datetime-local" /></div>
-            </label>
-          </div>
-          <button class="button button--primary button--nutrition" type="submit">Guardar àpat</button>
-        </form>
-
-        <section class="surface-card">
-          <div class="section-title-row">
-            <h2>Àpats recents</h2>
-            <span id="mealCountChip" class="chip">0 avui</span>
-          </div>
-          <div id="mealHistory" class="record-list"></div>
-        </section>
 
         <section class="surface-card">
           <div class="section-title-row">

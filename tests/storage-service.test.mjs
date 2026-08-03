@@ -22,7 +22,7 @@ const defaultState = await service.loadState();
 assert.equal(defaultState.version, 3);
 assert.deepEqual(defaultState.days, []);
 assert.deepEqual(defaultState.weights, []);
-assert.deepEqual(defaultState.meals, []);
+assert.equal('meals' in defaultState, false);
 
 console.log('PASS — estat per defecte');
 
@@ -52,8 +52,7 @@ const legacyAdapter = new MemoryAdapter({
       date: '2026-07-24',
       weight: 81,
       steps: 10000
-    }],
-    meals: []
+    }]
   })
 });
 

@@ -30,7 +30,6 @@ const rawState = {
   version: 3,
   settings: {},
   days: [],
-  meals: [],
   weights: [
     {
       id: activeId,

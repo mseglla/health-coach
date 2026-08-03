@@ -46,18 +46,6 @@ Permet conservar historial d’objectius.
 - `source text not null default 'manual'`
 - timestamps comuns
 
-### meal_logs
-
-- `id uuid primary key`
-- `user_id uuid not null`
-- `meal_type text not null`
-- `description text not null`
-- `calories numeric null`
-- `protein_g numeric null`
-- `logged_at timestamptz not null`
-- `source text not null default 'manual'`
-- timestamps comuns
-
 ### activity_logs
 
 - `id uuid primary key`
@@ -78,11 +66,11 @@ Una fila per usuari i dia.
 - `id uuid primary key`
 - `user_id uuid not null`
 - `summary_date date not null`
-- `total_calories_burned numeric null`
-- `active_calories numeric null`
-- `total_calories_intake numeric null`
+- `total_kcal integer null`
+- `active_kcal integer null`
+- `intake_kcal integer null`
 - `steps integer null`
-- `is_complete boolean not null default false`
+- `source text not null default 'manual'`
 - timestamps comuns
 - unique: `(user_id, summary_date)`
 
@@ -118,7 +106,6 @@ with check (auth.uid() = id)
 ## Índexs mínims
 
 - `weight_logs(user_id, measured_at desc)`
-- `meal_logs(user_id, logged_at desc)`
 - `activity_logs(user_id, started_at desc)`
 - `daily_summaries(user_id, summary_date desc)`
 - índex parcial de files no eliminades quan sigui necessari.
@@ -128,4 +115,3 @@ with check (auth.uid() = id)
 - Un únic projecte Supabase amb esquemes separats o projectes DEV/PROD independents.
 - Política exacta de conflictes i soft delete.
 - Límit de retenció del registre de sincronització.
-- Tractament de fotos d’àpats a Supabase Storage.
