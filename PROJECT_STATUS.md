@@ -10,7 +10,7 @@ Construir un sistema personal de salut i rendiment que integri Apple Watch i App
 
 - **Fase actual:** Fase 1 — Infraestructura segura i online-first
 - **Estat:** en curs
-- **Pròxima fita:** afegir estats clars de connexió, càrrega i error
+- **Pròxima fita:** crear preview/staging i validar-hi la base online-first
 - **Branca d’integració:** `develop`
 - **Producció estable:** `main`
 
@@ -36,7 +36,7 @@ Construir un sistema personal de salut i rendiment que integri Apple Watch i App
 - [x] Descartar cues offline i resolució general de conflictes com a requisit actual.
 - [x] Revisar el codi existent d’IndexedDB/localStorage i definir què es conserva com a migració o memòria cau.
 - [x] Fer que Supabase sigui la font de veritat del pilot de pesos.
-- [ ] Afegir estats clars de connexió, càrrega i error.
+- [x] Afegir estats clars de connexió, càrrega i error.
 - [x] Validar recuperació de dades en un segon dispositiu.
 - [ ] Crear preview/staging.
 - [ ] Afegir proves reals de navegador.
@@ -48,6 +48,10 @@ Construir un sistema personal de salut i rendiment que integri Apple Watch i App
 - Soft delete verificat mitjançant `deleted_at`.
 - Recuperació i coherència validades en dos navegadors amb el mateix compte.
 - Els resums diaris també es recuperen des de Supabase.
+- Estat `SESSIÓ TANCADA` diferenciat de `SENSE CONNEXIÓ`.
+- Formularis de pes i resum desactivats sense sessió i mentre es carreguen dades remotes.
+- Eliminat el camí alternatiu de guardat local per als registres de salut.
+- Canvis integrats a `develop` mitjançant el merge `afc7aeb`.
 
 ### Criteri de sortida
 
