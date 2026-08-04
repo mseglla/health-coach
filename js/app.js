@@ -26,18 +26,27 @@ await localWeightRepository.initialize(state);
 
 let localWeights = state.weights;
 let localDays = state.days;
-let weightRepository = localWeightRepository;
+let weightRepository = remoteWeightRepository;
 let activeUserId = null;
+
+function setAccountFormsEnabled(enabled) {
+  [$('weightForm'), $('dayForm')].forEach(form => {
+    form.querySelectorAll('input, button').forEach(control => {
+      control.disabled = !enabled;
+    });
+  });
+}
 
 async function handleSessionChange(session) {
   const userId = session?.user?.id || null;
   if (userId === activeUserId) return;
 
+  setAccountFormsEnabled(false);
+
   if (!userId) {
     activeUserId = null;
-    weightRepository = localWeightRepository;
-    state.weights = localWeights;
-    state.days = localDays;
+    state.weights = [];
+    state.days = [];
     resetWeightForm();
     renderState();
     return;
@@ -54,6 +63,7 @@ async function handleSessionChange(session) {
     ]);
     state.weights = remoteState.weights;
     state.days = remoteState.days;
+    setAccountFormsEnabled(true);
   } catch (error) {
     state.weights = [];
     state.days = [];
@@ -65,6 +75,8 @@ async function handleSessionChange(session) {
   resetWeightForm();
   renderState();
 }
+
+setAccountFormsEnabled(false);
 
 const authUi = createAuthUi({
   notify: showToast,
@@ -103,6 +115,12 @@ function resetWeightForm() {
 
 $('dayForm').addEventListener('submit', async event => {
   event.preventDefault();
+
+  if (!activeUserId) {
+    showToast('Inicia sessió per guardar les dades');
+    return;
+  }
+
   const data = {
     date: todayISO(),
     steps: parseNumber($('stepsInput').value),
@@ -112,14 +130,8 @@ $('dayForm').addEventListener('submit', async event => {
   };
 
   try {
-    if (activeUserId) {
-      await remoteDailySummaryRepository.save(state, data);
-      renderState('Energia i activitat guardades');
-    } else {
-      upsertDay(data);
-      localDays = state.days;
-      await saveAndRender('Energia i activitat guardades');
-    }
+    await remoteDailySummaryRepository.save(state, data);
+    renderState('Energia i activitat guardades');
     openScreen('home');
   } catch (error) {
     console.error('Daily summary save failed', error);
@@ -129,6 +141,12 @@ $('dayForm').addEventListener('submit', async event => {
 
 $('weightForm').addEventListener('submit', async event => {
   event.preventDefault();
+
+  if (!activeUserId) {
+    showToast('Inicia sessió per guardar les dades');
+    return;
+  }
+
   const value = parseNumber($('weightInput').value);
   const measuredAt = $('weightMeasuredAt').value;
   const recordId = $('weightRecordId').value;
@@ -149,7 +167,6 @@ $('weightForm').addEventListener('submit', async event => {
       measuredAt
     });
 
-    if (!activeUserId) localWeights = state.weights;
     resetWeightForm();
     renderState(recordId ? 'Pes actualitzat' : 'Pes guardat');
   } catch (error) {
@@ -162,7 +179,7 @@ $('cancelWeightEdit').addEventListener('click', resetWeightForm);
 
 $('weightHistory').addEventListener('click', async event => {
   const button = event.target.closest('[data-weight-action]');
-  if (!button) return;
+  if (!button || !activeUserId) return;
   const record = weightRepository.findById(
     state,
     button.dataset.id
@@ -181,7 +198,6 @@ $('weightHistory').addEventListener('click', async event => {
   if (button.dataset.weightAction === 'delete' && window.confirm('Vols eliminar aquest registre de pes?')) {
     try {
       await weightRepository.softDelete(state, record.id);
-      if (!activeUserId) localWeights = state.weights;
       if ($('weightRecordId').value === record.id) resetWeightForm();
       renderState('Pes eliminat');
     } catch (error) {
