@@ -160,16 +160,16 @@ export class AuthUiController {
       return;
     }
 
-    this.setStatus('MODE LOCAL', 'neutral');
+    this.setStatus('SESSIÓ TANCADA', 'neutral');
     this.elements.description.textContent =
-      'Les dades es guarden només en aquest dispositiu. Pots continuar utilitzant ATLES sense compte.';
+      'Inicia sessió per carregar i guardar les dades del teu compte.';
     this.elements.userEmail.textContent = '';
   }
 
   renderConnectionError() {
     this.setStatus('SENSE CONNEXIÓ', 'bad');
     this.elements.description.textContent =
-      'No s’ha pogut connectar amb Supabase. Les dades locals continuen disponibles.';
+      'No s’ha pogut connectar amb ATLES. Comprova la connexió i torna-ho a provar.';
   }
 
   async initialize() {
