@@ -14,14 +14,14 @@ La prioritat és construir una base fiable. No s’afegeixen funcionalitats gran
 
 ## Fase 1 — Arquitectura i procés
 
-- [x] Arquitectura local-first documentada.
+- [x] Arquitectura online-first documentada.
 - [x] Model inicial de Supabase documentat.
 - [x] Flux de desplegament documentat.
-- [ ] Definir criteris d’acceptació de la nova base.
-- [ ] Crear entorn preview/staging.
+- [x] Definir criteris d’acceptació de la nova base.
+- [x] Crear entorn preview/staging.
 - [ ] Afegir proves de navegació automatitzades.
 
-## Fase 2 — Persistència local robusta
+## Fase 2 — Persistència local heretada i migració
 
 - [x] Dissenyar repositoris de dades desacoblats de la UI.
 - [x] Introduir IndexedDB sense eliminar localStorage.
@@ -37,14 +37,14 @@ La prioritat és construir una base fiable. No s’afegeixen funcionalitats gran
 - [x] Crear `profiles`, `goals` i `weight_logs`.
 - [x] Activar i provar RLS.
 - [x] Sincronitzar pesos com a pilot.
-- [ ] Sincronitzar resums diaris.
+- [x] Sincronitzar resums diaris.
 - [x] Simplificar el comportament sense connexió, sense cues ni conflictes.
 
 ## Fase 4 — Sincronització completa
 
 - [ ] Activitats.
-- [ ] Estat visible de sincronització.
-- [ ] Recuperació en un segon dispositiu.
+- [x] Estats visibles de connexió, càrrega i error.
+- [x] Recuperació en un segon dispositiu.
 
 ## Fase 5 — Nova interfície v0.4
 
@@ -61,10 +61,10 @@ Cada bloc necessita preview i prova real abans de passar al següent.
 
 ## Fase 6 — Vercel
 
-- [ ] Connectar repositori.
-- [ ] Configurar producció, staging i previews.
-- [ ] Variables d’entorn.
-- [ ] Rollback provat.
+- [x] Connectar repositori.
+- [x] Configurar producció, staging i previews.
+- [x] Validar que la configuració pública actual no requereix variables d’entorn.
+- [x] Rollback provat.
 - [ ] Retirar GitHub Pages només després de validació.
 
 ## Fase 7 — Funcionalitats avançades
