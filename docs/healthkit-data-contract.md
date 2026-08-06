@@ -24,7 +24,8 @@ La PWA no accedeix directament a HealthKit.
 - Cada registre ha de conservar la seva procedència.
 - La importació ha de ser incremental i idempotent.
 - No es guardaran totes les mostres crues en la primera prova tècnica.
-- Els agregats diaris i els entrenaments es modelen per separat.
+- Els agregats diaris automàtics i els entrenaments es modelen per separat.
+- `daily_summaries` continua representant la vista diària i les dades manuals existents.
 
 ## Camps comuns de procedència
 
@@ -40,25 +41,43 @@ Els registres importats de HealthKit han de poder conservar:
 - `created_at` i `updated_at`: timestamps gestionats per Supabase.
 - `deleted_at`: soft delete quan sigui necessari.
 
-## Passos diaris
+## Mètriques diàries automàtiques
 
-Els passos es consolidaran a `daily_summaries`.
+Els passos i altres agregats diaris provinents de HealthKit es guardaran en una taula específica `health_daily_metrics`.
+
+Aquesta separació evita que una única fila de `daily_summaries` barregi mètriques manuals i automàtiques amb una sola columna `source`.
 
 Camps mínims:
 
+- `id`
 - `user_id`
-- `summary_date`
-- `steps`
+- `metric_date`
+- `metric_type`
+- `value`
+- `unit`
 - `source`
-- `updated_at`
+- `source_bundle_id`
+- `source_device`
+- `timezone`
+- `metadata`
+- `imported_at`
+- timestamps comuns
+
+Valors inicials de `metric_type`:
+
+- `steps`
+- `active_kcal`
+- `total_kcal`
 
 Regles:
 
-- Hi ha una única fila activa per `user_id` i `summary_date`.
+- Hi ha una única fila activa per `user_id`, `metric_date`, `metric_type` i `source`.
 - El connector calcula el total del dia segons la zona horària de l’usuari.
-- Una nova importació del mateix dia actualitza el total existent.
+- Una nova importació del mateix dia, mètrica i font actualitza el valor existent.
 - No es guarden les mostres individuals de passos durant la prova tècnica.
 - El valor no pot ser negatiu.
+- ATLES combina aquestes mètriques amb `daily_summaries` quan construeix el dashboard.
+- La nutrició manual no s’ha de sobreescriure quan arriben dades automàtiques.
 
 ## Entrenaments
 
@@ -81,6 +100,7 @@ Camps mínims:
 - `source_device`
 - `timezone`
 - `metadata`
+- `imported_at`
 - timestamps comuns
 
 Regles:
@@ -101,6 +121,12 @@ user_id + source + external_id
 
 Això implica un índex únic parcial per als registres que tinguin `external_id`.
 
+Per a les mètriques diàries automàtiques, la clau serà:
+
+```text
+user_id + metric_date + metric_type + source
+```
+
 Una reimportació del mateix registre:
 
 - no crea una fila nova;
@@ -108,7 +134,7 @@ Una reimportació del mateix registre:
 - conserva la identitat interna d’ATLES;
 - actualitza `updated_at` i `imported_at`.
 
-Per als resums diaris, la clau continua sent:
+`daily_summaries` manté la seva unicitat actual:
 
 ```text
 user_id + summary_date
@@ -132,7 +158,7 @@ El cursor o token de sincronització és responsabilitat del connector iOS. No e
 
 - Els timestamps d’esdeveniments es guarden com `timestamptz`.
 - La zona horària original es conserva quan estigui disponible.
-- Els passos diaris s’assignen a `summary_date` segons la zona horària de l’usuari en aquell moment.
+- Les mètriques diàries s’assignen a `metric_date` segons la zona horària de l’usuari en aquell moment.
 - ATLES no ha d’agrupar un dia únicament segons UTC.
 
 ## Unitats normalitzades
@@ -160,6 +186,7 @@ Les unitats originals poden conservar-se dins de `metadata` quan sigui útil.
 Inclòs:
 
 - passos diaris;
+- calories actives i totals diàries;
 - entrenaments;
 - procedència;
 - dispositiu;
@@ -182,9 +209,9 @@ Fora d’abast inicial:
 
 La prova es considera viable quan:
 
-- un connector iOS pot llegir passos i entrenaments reals;
+- un connector iOS pot llegir passos, calories diàries i entrenaments reals;
 - les dades arriben a Supabase amb procedència completa;
-- ATLES les pot consultar;
+- ATLES les pot consultar i combinar amb les dades manuals;
 - repetir la sincronització no crea duplicats;
 - les dates i els totals diaris es mantenen correctes;
 - un altre usuari no pot accedir a aquestes dades.
