@@ -39,7 +39,7 @@ Construir un sistema personal de salut i rendiment que integri Apple Watch i App
 - [x] Afegir estats clars de connexió, càrrega i error.
 - [x] Validar recuperació de dades en un segon dispositiu.
 - [x] Crear preview/staging.
-- [ ] Afegir proves reals de navegador.
+- [x] Afegir proves reals de navegador.
 - [ ] Provar rollback de la nova base.
 
 ### Validació 2026-08-04
@@ -60,6 +60,15 @@ Construir un sistema personal de salut i rendiment que integri Apple Watch i App
 - Preview de `feature/staging-foundation` desplegada correctament.
 - Autenticació, lectura, alta i eliminació validades a la preview.
 - Redirect URLs de Supabase configurades per GitHub Pages, localhost, producció Vercel i previews.
+
+### Validació real en iPhone 2026-08-06
+
+- Preview de `develop` oberta amb Safari en un iPhone real.
+- Accés realitzat mitjançant un enllaç compartit de Vercel.
+- Autenticació i recuperació de dades validades.
+- Navegació, formularis i persistència validades.
+- Obertura com a PWA des de la pantalla d'inici validada.
+- No s'han detectat bloquejos de navegació ni problemes visibles amb el teclat o les safe areas.
 
 ### Criteri de sortida
 
