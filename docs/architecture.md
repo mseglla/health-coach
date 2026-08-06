@@ -2,45 +2,42 @@
 
 ## Objectiu
 
-Construir una PWA **local-first**, robusta i usable sense connexió. El núvol ha de sincronitzar i protegir les dades, però l’app no ha de deixar de funcionar si Supabase no està disponible.
+Construir una aplicació **online-first**, segura i simple. Supabase és la font de veritat de les dades. ATLES necessita connexió per autenticar, carregar i desar informació; si no hi ha xarxa, mostrarà un estat clar de «sense connexió» i evitarà qualsevol canvi que pugui perdre’s.
+
+Aquesta decisió redueix considerablement la complexitat de sincronització, conflictes, cues offline i duplicació de dades. El suport offline complet es podrà reconsiderar en el futur només si l’ús real ho justifica.
 
 ## Arquitectura general
 
 ```text
-iPhone / navegador
-        │
-        ▼
+Apple Watch
+    ↓
+Apple Health / connector iOS futur
+    ↓
 PWA ATLES
-        │
-        ▼
-Repositoris de dades
-        │
-        ▼
-StorageService
-        │
-        ├── IndexedDB (font local operativa)
-        └── localStorage (còpia de seguretat)
-        │
-        ▼
-Motor de sincronització
-        │
-        ▼
+    ↓
+Serveis i repositoris de dades
+    ↓
 Supabase
 - Auth
 - PostgreSQL
 - RLS
-- backups
+- Storage / Edge Functions quan calgui
+    ↓
+Motor analític, coaches, IA i Digital Twin
 ```
 
 ## Principis
 
-1. **Local-first:** l’usuari pot registrar i consultar dades sense Internet.
-2. **Sincronització eventual:** els canvis pendents es pugen quan torna la connexió.
-3. **Cap pèrdua silenciosa:** els errors de sincronització han de quedar registrats i ser recuperables.
-4. **IDs estables:** cada registre té un UUID generat al client.
-5. **Timestamps obligatoris:** `created_at`, `updated_at` i, quan calgui, `deleted_at`.
-6. **Soft delete:** les eliminacions es sincronitzen; no s’esborren immediatament del núvol.
-7. **Separació d’entorns:** producció, integració i funcionalitats no comparteixen desplegament.
+1. **Online-first:** les operacions funcionals necessiten connexió.
+2. **Supabase com a font de veritat:** el servidor conserva l’estat canònic.
+3. **Sense canvis offline:** si no hi ha connexió, la UI informa i no permet desar operacions.
+4. **Memòria cau limitada:** es pot conservar informació no crítica per accelerar la càrrega, però no és una segona font de veritat.
+5. **Cap pèrdua silenciosa:** qualsevol error de lectura o escriptura es mostra i es registra.
+6. **IDs estables:** cada registre sincronitzable utilitza UUID.
+7. **Timestamps obligatoris:** `created_at`, `updated_at` i, quan calgui, `deleted_at`.
+8. **Soft delete:** es conserva per integritat, auditoria i futures integracions.
+9. **Separació d’entorns:** producció, integració i funcionalitats no comparteixen desplegament.
+10. **Desenvolupament incremental:** una funcionalitat, una branca petita, una prova real.
 
 ## Responsabilitats
 
@@ -48,77 +45,76 @@ Supabase
 
 - Interfície d’usuari.
 - Validació immediata dels formularis.
-- Accés a les dades mitjançant repositoris.
-- Funcionament offline.
-- Cua de canvis pendents.
-- Lectura de l’estat de sincronització.
+- Comprovació de connexió i sessió.
+- Accés a dades mitjançant serveis o repositoris.
+- Missatges clars davant errors o absència de xarxa.
+- Cap promesa de treball offline complet.
 
-### Repositoris de dades
+### Repositoris i serveis
 
-- Desacoblen la UI de la persistència i la sincronització.
+- Desacoblen la UI de Supabase.
 - Centralitzen creació, consulta, actualització i soft delete.
-- Generen UUID estables que s’utilitzen tant localment com a Supabase.
-- Conserven `created_at`, `updated_at` i `deleted_at`.
-- Exposen els tombstones al motor de sincronització, però no a la UI.
-- S’afegeixen incrementalment per entitat; `WeightRepository` és el primer pilot.
+- Gestionen UUID, timestamps, validació i errors.
+- Permeten canviar la implementació sense reescriure la interfície.
+- S’afegeixen incrementalment per entitat.
 
-### StorageService
+### Persistència local existent
 
-- Ofereix una interfície asíncrona comuna de persistència.
-- Utilitza IndexedDB com a font principal.
-- Manté localStorage com a còpia de seguretat durant la migració.
-- Permet substituir els adaptadors sense modificar els repositoris ni la UI.
+IndexedDB i localStorage ja existeixen en parts del projecte. No s’eliminaran precipitadament:
 
-### IndexedDB
-
-- Perfil i preferències.
-- Objectius.
-- Pesos.
-- Àpats.
-- Activitats.
-- Resums diaris.
-- Operacions pendents de sincronitzar.
+- es mantindran temporalment per compatibilitat i migració;
+- no es desenvoluparà un motor offline complet;
+- no s’afegiran cues complexes ni resolució general de conflictes;
+- podran evolucionar cap a memòria cau o eliminar-se quan Supabase estigui validat com a font principal.
 
 ### Client Supabase
 
-- Es carrega sota demanda quan cal autenticació o sincronització.
-- Manté la renovació i persistència de la sessió mitjançant el SDK oficial.
-- Una fallada de xarxa o del SDK no bloqueja la càrrega de les dades locals.
-- Utilitza només la URL i la publishable key del projecte corresponent.
+- Gestiona autenticació i dades remotes amb el SDK oficial.
+- Utilitza només la URL i la publishable key al frontend.
+- Tradueix errors tècnics a missatges comprensibles.
+- No permet operacions si la sessió o la xarxa no són vàlides.
 
 ### Supabase
 
 - Autenticació.
-- Còpia sincronitzada de les dades.
+- PostgreSQL com a font de veritat.
 - Seguretat amb RLS.
 - Recuperació entre dispositius.
-- Base futura per informes, IA i serveis externs.
+- Migracions versionades.
+- Base futura per Apple Health, informes, IA, coaches i Digital Twin.
 
-## Sincronització inicial
+## Flux funcional
 
-1. L’app llegeix IndexedDB.
-2. Renderitza sense esperar la xarxa.
-3. Si hi ha sessió i connexió, executa `push` de canvis locals pendents.
-4. Després executa `pull` de canvis remots posteriors a l’última sincronització.
-5. Actualitza IndexedDB.
-6. Torna a renderitzar només si hi ha canvis.
+1. L’app comprova connexió i sessió.
+2. Si no hi ha connexió, mostra una pantalla o avís clar i no permet modificar dades.
+3. Si hi ha connexió, carrega les dades necessàries de Supabase.
+4. Les operacions s’envien directament al backend.
+5. La UI només confirma un canvi quan Supabase l’ha acceptat.
+6. Els errors es mostren i no es dissimulen amb un fals estat local.
 
-## Conflictes
+## Apple Health i Digital Twin
 
-Primera estratègia:
+La base de dades ha d’estar preparada des d’ara per rebre dades amb:
 
-- Els registres independents es fusionen per UUID.
-- En una edició concurrent del mateix registre, preval el `updated_at` més recent.
-- Els conflictes dubtosos es registren; no s’han de descartar silenciosament.
-- Les dades crítiques han de conservar una còpia anterior fins confirmar la sincronització.
+- font i dispositiu;
+- identificador extern;
+- data d’inici i final;
+- zona horària;
+- valor i unitat;
+- metadades originals;
+- mecanismes de deduplicació.
+
+La integració completa requerirà una capa nativa iOS. Aquestes dades alimentaran l’analítica personal, els coaches i el Digital Twin.
 
 ## Evolució prevista
 
-1. localStorage inicial estable — completat.
-2. Migració controlada a IndexedDB — completat.
-3. Supabase Auth i esquema mínim — completat.
-4. Repositori local de pesos — completat.
-5. Sincronització d’una sola entitat: pesos — següent pilot.
-6. Extensió a àpats, activitats i resums.
-7. Previews i desplegament a Vercel.
-8. Integracions d’IA i salut.
+1. Supabase Auth i esquema mínim — completat.
+2. RLS i pilot de pesos — completat.
+3. Simplificar la persistència cap a online-first — decisió adoptada.
+4. Completar entitats principals i serveis remots.
+5. Estat visible de connexió, càrrega i errors.
+6. Recuperació en un segon dispositiu.
+7. Preview/staging i desplegament segur.
+8. Nucli diari de salut.
+9. Prova tècnica Apple Health.
+10. Analítica, coaches i Digital Twin.

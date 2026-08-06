@@ -32,7 +32,7 @@ No es fan commits funcionals directament a `main`.
 - Navegació completa.
 - Formularis principals.
 - Persistència després de tancar i reobrir.
-- Prova offline bàsica.
+- Comportament sense connexió validat: els formularis de salut queden bloquejats i no es mostra cap guardat fals.
 - Migració de dades existents verificada.
 - Service worker i actualització de PWA verificats.
 - Pla de rollback identificat.
@@ -48,10 +48,11 @@ No es fan commits funcionals directament a `main`.
 6. Crear, editar i eliminar una activitat.
 7. Tancar completament l’app i reobrir.
 8. Comprovar que les dades continuen existint.
-9. Activar mode avió i comprovar lectura i registre local.
-10. Recuperar connexió i comprovar sincronització.
-11. Verificar que no hi ha elements bloquejant la navegació.
-12. Verificar safe areas i teclat a iPhone.
+9. Activar mode avió i comprovar que no es poden crear ni modificar registres de salut.
+10. Comprovar que l’error de connexió és visible i que no apareix cap confirmació falsa de guardat.
+11. Recuperar connexió i comprovar que les dades remotes es carreguen correctament.
+12. Verificar que no hi ha elements bloquejant la navegació.
+13. Verificar safe areas i teclat a iPhone.
 
 ## Rollback
 
@@ -85,18 +86,13 @@ No es poden incloure mai al frontend:
 - Contrasenya de la base de dades.
 - Tokens personals o credencials d’usuaris.
 
-El SDK de Supabase es carrega sota demanda. L’aplicació local ha de continuar funcionant si el SDK o la xarxa no estan disponibles.
+El SDK de Supabase es carrega sota demanda. Supabase és la font de veritat dels registres de salut del compte. Sense sessió o connexió, l’aplicació no permet crear ni modificar aquests registres i ha de mostrar un estat d’error clar.
 
 ## GitHub Pages i Vercel
 
-GitHub Pages continua com a producció temporal.
+GitHub Pages continua com a producció pública temporal fins que `develop` es promocioni explícitament a `main` i es validi el desplegament final.
 
-La migració a Vercel es farà quan:
-
-- existeixi un entorn `develop` funcional;
-- Supabase estigui configurat;
-- necessitem variables d’entorn;
-- les previews automàtiques estiguin preparades.
+Vercel ja està connectat al repositori i s’ha validat amb producció, staging i previews automàtiques.
 
 A Vercel:
 
