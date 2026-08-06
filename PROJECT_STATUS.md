@@ -38,7 +38,7 @@ Construir un sistema personal de salut i rendiment que integri Apple Watch i App
 - [x] Fer que Supabase sigui la font de veritat del pilot de pesos.
 - [x] Afegir estats clars de connexió, càrrega i error.
 - [x] Validar recuperació de dades en un segon dispositiu.
-- [ ] Crear preview/staging.
+- [x] Crear preview/staging.
 - [ ] Afegir proves reals de navegador.
 - [ ] Provar rollback de la nova base.
 
@@ -52,6 +52,14 @@ Construir un sistema personal de salut i rendiment que integri Apple Watch i App
 - Formularis de pes i resum desactivats sense sessió i mentre es carreguen dades remotes.
 - Eliminat el camí alternatiu de guardat local per als registres de salut.
 - Canvis integrats a `develop` mitjançant el merge `afc7aeb`.
+
+### Validació de preview 2026-08-06
+
+- Vercel connectat al repositori `mseglla/health-coach`.
+- `main` configurada com a producció de Vercel.
+- Preview de `feature/staging-foundation` desplegada correctament.
+- Autenticació, lectura, alta i eliminació validades a la preview.
+- Redirect URLs de Supabase configurades per GitHub Pages, localhost, producció Vercel i previews.
 
 ### Criteri de sortida
 
