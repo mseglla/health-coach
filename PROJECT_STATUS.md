@@ -40,7 +40,7 @@ Construir un sistema personal de salut i rendiment que integri Apple Watch i App
 - [x] Validar recuperació de dades en un segon dispositiu.
 - [x] Crear preview/staging.
 - [x] Afegir proves reals de navegador.
-- [ ] Provar rollback de la nova base.
+- [x] Provar rollback de la nova base.
 
 ### Validació 2026-08-04
 
@@ -69,6 +69,13 @@ Construir un sistema personal de salut i rendiment que integri Apple Watch i App
 - Navegació, formularis i persistència validades.
 - Obertura com a PWA des de la pantalla d'inici validada.
 - No s'han detectat bloquejos de navegació ni problemes visibles amb el teclat o les safe areas.
+
+### Validació de rollback 2026-08-06
+
+- Branca estable `stable/v0.3` confirmada al commit `ee70aef35f3795f89f06c52c474d9ecf27307aa5`.
+- Branca temporal `test/rollback-v0.3` desplegada correctament a Vercel.
+- La versió v0.3 carrega, permet navegar i conserva dades locals després de recarregar.
+- La prova s'ha fet sense modificar `main` ni `develop`.
 
 ### Criteri de sortida
 
