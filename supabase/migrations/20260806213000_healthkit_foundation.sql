@@ -18,9 +18,6 @@ create table public.health_daily_metrics (
   updated_at timestamptz not null default now(),
   deleted_at timestamptz,
 
-  constraint health_daily_metrics_identity_unique
-    unique (user_id, metric_date, metric_type, source),
-
   constraint health_daily_metrics_type_allowed
     check (metric_type in ('steps', 'active_kcal', 'total_kcal')),
 
@@ -56,9 +53,6 @@ create table public.activity_logs (
   updated_at timestamptz not null default now(),
   deleted_at timestamptz,
 
-  constraint activity_logs_external_identity_unique
-    unique (user_id, source, external_id),
-
   constraint activity_logs_type_not_blank
     check (length(trim(activity_type)) > 0),
 
@@ -78,7 +72,10 @@ create table public.activity_logs (
     check (steps is null or steps >= 0),
 
   constraint activity_logs_source_not_blank
-    check (length(trim(source)) > 0)
+    check (length(trim(source)) > 0),
+
+  constraint activity_logs_external_id_not_blank
+    check (external_id is null or length(trim(external_id)) > 0)
 );
 
 create trigger health_daily_metrics_set_updated_at
@@ -89,9 +86,17 @@ create trigger activity_logs_set_updated_at
 before update on public.activity_logs
 for each row execute function public.set_updated_at();
 
+create unique index health_daily_metrics_active_identity_idx
+  on public.health_daily_metrics (user_id, metric_date, metric_type, source)
+  where deleted_at is null;
+
 create index health_daily_metrics_user_date_idx
   on public.health_daily_metrics (user_id, metric_date desc)
   where deleted_at is null;
+
+create unique index activity_logs_active_external_identity_idx
+  on public.activity_logs (user_id, source, external_id)
+  where deleted_at is null and external_id is not null;
 
 create index activity_logs_user_started_at_idx
   on public.activity_logs (user_id, started_at desc)
