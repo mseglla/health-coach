@@ -8,9 +8,9 @@ Construir un sistema personal de salut i rendiment que integri Apple Watch i App
 
 ## Estat global
 
-- **Fase actual:** Fase 1 — Infraestructura segura i online-first
+- **Fase actual:** Fase 1B — Prova tècnica Apple Health
 - **Estat:** en curs
-- **Pròxima fita:** crear preview/staging i validar-hi la base online-first
+- **Pròxima fita:** validar una capa nativa iOS mínima i importar dades reals de HealthKit
 - **Branca d’integració:** `develop`
 - **Producció estable:** `main`
 
@@ -83,11 +83,24 @@ Un usuari pot autenticar-se, llegir i modificar les seves dades amb connexió, r
 
 ## Fase 1B — Prova tècnica Apple Health
 
-- [ ] Definir contracte de dades HealthKit → ATLES.
-- [ ] Preparar camps d’origen, dispositiu i identificador extern.
+- [x] Definir contracte de dades HealthKit → ATLES.
+- [x] Preparar camps d’origen, dispositiu i identificador extern.
 - [ ] Validar una capa nativa iOS mínima.
 - [ ] Importar almenys passos i entrenaments.
-- [ ] Provar deduplicació i sincronització segura.
+- [ ] Provar deduplicació i sincronització segura amb dades reals de HealthKit.
+
+### Base HealthKit validada 2026-08-10
+
+- Contracte `HealthKit → connector iOS → Supabase → ATLES` documentat.
+- Creada `health_daily_metrics` per separar mètriques automàtiques diàries dels resums manuals.
+- Creada `activity_logs` per activitats manuals i entrenaments importats.
+- Identitat única de mètrica: `(user_id, metric_date, metric_type, source)`.
+- Identitat única d’activitat importada: `(user_id, source, external_id)`.
+- Camps d’origen preparats: `source`, `external_id`, `source_bundle_id`, `source_device`, `timezone`, `metadata` i `imported_at` segons la taula.
+- Migració `20260806213000_healthkit_foundation.sql` aplicada a Supabase i historial local/remot alineat.
+- RLS verificada per `health_daily_metrics` i `activity_logs`: `SELECT`, `INSERT` i `UPDATE` limitats a l’usuari autenticat.
+- Proves remotes amb dos usuaris reals superades per a les dues taules: upsert sense duplicats, aïllament de lectura i bloqueig de suplantació de `user_id`.
+- Canvis integrats a `develop` mitjançant el merge `753e2bf`.
 
 ### Criteri de sortida
 
