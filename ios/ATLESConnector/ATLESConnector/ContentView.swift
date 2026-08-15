@@ -10,10 +10,65 @@ import HealthKit
 
 struct ContentView: View {
     @StateObject private var healthKit = HealthKitManager()
+    @StateObject private var auth = SupabaseAuthManager()
+
+    @State private var email = ""
+    @State private var password = ""
 
     var body: some View {
         NavigationStack {
             List {
+                Section("Supabase") {
+                    if auth.isAuthenticated {
+                        Label(
+                            "Sessió iniciada",
+                            systemImage: "checkmark.circle.fill"
+                        )
+
+                        if let userId = auth.userId {
+                            Text(userId)
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+
+                        Button("Tancar sessió") {
+                            auth.signOut()
+                        }
+                    } else {
+                        TextField("Correu", text: $email)
+                            .textInputAutocapitalization(.never)
+                            .keyboardType(.emailAddress)
+                            .autocorrectionDisabled()
+
+                        SecureField("Contrasenya", text: $password)
+
+                        Button {
+                            Task {
+                                await auth.signIn(
+                                    email: email,
+                                    password: password
+                                )
+                            }
+                        } label: {
+                            if auth.isLoading {
+                                ProgressView()
+                            } else {
+                                Text("Iniciar sessió")
+                            }
+                        }
+                        .disabled(
+                            email.isEmpty ||
+                            password.isEmpty ||
+                            auth.isLoading
+                        )
+
+                        if let error = auth.errorMessage {
+                            Text(error)
+                                .foregroundStyle(.red)
+                        }
+                    }
+                }
+
                 Section {
                     Button("Connectar Apple Health") {
                         Task {
@@ -51,7 +106,7 @@ struct ContentView: View {
                 }
 
                 if let error = healthKit.authorizationError {
-                    Section("Error") {
+                    Section("Error HealthKit") {
                         Text(error)
                             .foregroundStyle(.red)
                     }
