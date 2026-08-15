@@ -51,6 +51,22 @@ struct ContentView: View {
                                 }
                             }
 
+                            Button {
+                                Task {
+                                    await sync.syncWorkouts(
+                                        workouts: healthKit.workouts,
+                                        userId: userId,
+                                        accessToken: accessToken
+                                    )
+                                }
+                            } label: {
+                                if sync.isSyncing {
+                                    ProgressView()
+                                } else {
+                                    Text("Sincronitzar entrenaments")
+                                }
+                            }
+
                             if let message = sync.syncMessage {
                                 Text(message)
                                     .foregroundStyle(.green)
