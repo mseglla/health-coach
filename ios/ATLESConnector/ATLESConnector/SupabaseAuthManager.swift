@@ -18,7 +18,7 @@ final class SupabaseAuthManager: ObservableObject {
     private let supabaseURL = "https://zyjzyyudftnmfjbseibi.supabase.co"
     private let publishableKey = "sb_publishable_IboCUET8TK_jL3TjcX1K5g_z7cZBnN0"
 
-    private(set) var accessToken: String?
+    @Published private(set) var accessToken: String?
 
     func signIn(email: String, password: String) async {
         isLoading = true

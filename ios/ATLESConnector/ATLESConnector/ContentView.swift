@@ -11,6 +11,7 @@ import HealthKit
 struct ContentView: View {
     @StateObject private var healthKit = HealthKitManager()
     @StateObject private var auth = SupabaseAuthManager()
+    @StateObject private var sync = SupabaseHealthSyncManager()
 
     @State private var email = ""
     @State private var password = ""
@@ -29,6 +30,36 @@ struct ContentView: View {
                             Text(userId)
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
+                        }
+
+                        if let userId = auth.userId,
+                           let accessToken = auth.accessToken {
+
+                            Button {
+                                Task {
+                                    await sync.syncTodaySteps(
+                                        steps: healthKit.todaySteps,
+                                        userId: userId,
+                                        accessToken: accessToken
+                                    )
+                                }
+                            } label: {
+                                if sync.isSyncing {
+                                    ProgressView()
+                                } else {
+                                    Text("Sincronitzar passos")
+                                }
+                            }
+
+                            if let message = sync.syncMessage {
+                                Text(message)
+                                    .foregroundStyle(.green)
+                            }
+
+                            if let error = sync.errorMessage {
+                                Text(error)
+                                    .foregroundStyle(.red)
+                            }
                         }
 
                         Button("Tancar sessió") {
