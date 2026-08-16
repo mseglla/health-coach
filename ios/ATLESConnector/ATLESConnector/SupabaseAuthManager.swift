@@ -86,9 +86,105 @@ final class SupabaseAuthManager: ObservableObject {
             userId = session.user.id
             isAuthenticated = true
 
+            try KeychainStore.save(
+                session.accessToken,
+                account: "supabase_access_token"
+            )
+
+            try KeychainStore.save(
+                session.refreshToken,
+                account: "supabase_refresh_token"
+            )
+
+            try KeychainStore.save(
+                session.user.id,
+                account: "supabase_user_id"
+            )
+
         } catch {
             errorMessage = error.localizedDescription
         }
+    }
+
+    func restoreSession() async {
+        errorMessage = nil
+
+        do {
+            guard let refreshToken = try KeychainStore.load(
+                account: "supabase_refresh_token"
+            ) else {
+                return
+            }
+
+            try await refreshSession(
+                refreshToken: refreshToken
+            )
+
+        } catch {
+            signOut()
+            errorMessage = error.localizedDescription
+        }
+    }
+
+    private func refreshSession(
+        refreshToken: String
+    ) async throws {
+        guard let url = URL(
+            string: "\(supabaseURL)/auth/v1/token?grant_type=refresh_token"
+        ) else {
+            throw AuthError.invalidURL
+        }
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue(
+            publishableKey,
+            forHTTPHeaderField: "apikey"
+        )
+        request.setValue(
+            "application/json",
+            forHTTPHeaderField: "Content-Type"
+        )
+
+        request.httpBody = try JSONEncoder().encode(
+            RefreshRequest(
+                refreshToken: refreshToken
+            )
+        )
+
+        let (data, response) = try await URLSession.shared.data(
+            for: request
+        )
+
+        guard let httpResponse = response as? HTTPURLResponse,
+              (200...299).contains(httpResponse.statusCode)
+        else {
+            throw AuthError.refreshFailed
+        }
+
+        let session = try JSONDecoder().decode(
+            SignInResponse.self,
+            from: data
+        )
+
+        accessToken = session.accessToken
+        userId = session.user.id
+        isAuthenticated = true
+
+        try KeychainStore.save(
+            session.accessToken,
+            account: "supabase_access_token"
+        )
+
+        try KeychainStore.save(
+            session.refreshToken,
+            account: "supabase_refresh_token"
+        )
+
+        try KeychainStore.save(
+            session.user.id,
+            account: "supabase_user_id"
+        )
     }
 
     func signOut() {
@@ -96,6 +192,10 @@ final class SupabaseAuthManager: ObservableObject {
         userId = nil
         isAuthenticated = false
         errorMessage = nil
+
+        KeychainStore.delete(account: "supabase_access_token")
+        KeychainStore.delete(account: "supabase_refresh_token")
+        KeychainStore.delete(account: "supabase_user_id")
     }
 }
 
@@ -106,10 +206,12 @@ private struct SignInRequest: Encodable {
 
 private struct SignInResponse: Decodable {
     let accessToken: String
+    let refreshToken: String
     let user: SupabaseUser
 
     enum CodingKeys: String, CodingKey {
         case accessToken = "access_token"
+        case refreshToken = "refresh_token"
         case user
     }
 }
@@ -121,4 +223,18 @@ private struct SupabaseUser: Decodable {
 private struct SupabaseErrorResponse: Decodable {
     let msg: String?
     let message: String?
+}
+
+
+private struct RefreshRequest: Encodable {
+    let refreshToken: String
+
+    enum CodingKeys: String, CodingKey {
+        case refreshToken = "refresh_token"
+    }
+}
+
+private enum AuthError: Error {
+    case invalidURL
+    case refreshFailed
 }
