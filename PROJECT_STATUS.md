@@ -10,7 +10,7 @@ Construir un sistema personal de salut i rendiment que integri Apple Watch i App
 
 - **Fase actual:** Fase 1B — Prova tècnica Apple Health
 - **Estat:** en curs
-- **Pròxima fita:** validar una capa nativa iOS mínima i importar dades reals de HealthKit
+- **Pròxima fita:** validar la sincronització automàtica d'entrenaments en segon pla
 - **Branca d’integració:** `develop`
 - **Producció estable:** `main`
 
@@ -85,9 +85,11 @@ Un usuari pot autenticar-se, llegir i modificar les seves dades amb connexió, r
 
 - [x] Definir contracte de dades HealthKit → ATLES.
 - [x] Preparar camps d’origen, dispositiu i identificador extern.
-- [ ] Validar una capa nativa iOS mínima.
-- [ ] Importar almenys passos i entrenaments.
-- [ ] Provar deduplicació i sincronització segura amb dades reals de HealthKit.
+- [x] Validar una capa nativa iOS mínima.
+- [x] Importar almenys passos i entrenaments.
+- [x] Provar deduplicació i sincronització segura amb dades reals de HealthKit.
+- [x] Validar sincronització automàtica de passos en segon pla.
+- [ ] Validar sincronització automàtica d'entrenaments en segon pla.
 
 ### Base HealthKit validada 2026-08-10
 
@@ -101,6 +103,21 @@ Un usuari pot autenticar-se, llegir i modificar les seves dades amb connexió, r
 - RLS verificada per `health_daily_metrics` i `activity_logs`: `SELECT`, `INSERT` i `UPDATE` limitats a l’usuari autenticat.
 - Proves remotes amb dos usuaris reals superades per a les dues taules: upsert sense duplicats, aïllament de lectura i bloqueig de suplantació de `user_id`.
 - Canvis integrats a `develop` mitjançant el merge `753e2bf`.
+
+### Validació real HealthKit 2026-08-16
+
+- Connector natiu iOS executat en un iPhone real amb HealthKit.
+- Lectura real de passos i entrenaments validada.
+- Autenticació del connector contra Supabase validada amb un compte ATLES real.
+- Sessió Supabase persistent mitjançant Keychain i renovació amb `refresh_token`.
+- Sincronització manual de passos cap a `health_daily_metrics` validada.
+- Sincronització manual d'entrenaments cap a `activity_logs` validada.
+- Deduplicació real de passos validada: una única fila per `(user_id, metric_date, metric_type, source)` actualitzada mitjançant upsert.
+- HealthKit Background Delivery i `HKObserverQuery` implementats.
+- Sincronització automàtica de passos en segon pla validada en dispositiu real sense prémer cap botó.
+- Sincronització automàtica d'entrenaments en segon pla pendent de validació.
+- Branca de treball: `feature/healthkit-supabase-sync`.
+- Últim checkpoint validat: `585b583`.
 
 ### Criteri de sortida
 
