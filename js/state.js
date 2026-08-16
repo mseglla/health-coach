@@ -12,7 +12,9 @@ const defaultState = {
     targetDate: '2026-11-30'
   },
   days: [],
-  weights: []
+  weights: [],
+  healthMetrics: [],
+  activities: []
 };
 
 export function createDefaultState() {

@@ -4,6 +4,7 @@ import { $, openScreen, renderApp, renderCharts, showToast } from './ui.js';
 import { WeightRepository } from './weight-repository.js';
 import { SupabaseWeightRepository } from './supabase-weight-repository.js';
 import { SupabaseDailySummaryRepository } from './supabase-daily-summary-repository.js';
+import { SupabaseHealthMetricsRepository } from './supabase-health-metrics-repository.js';
 import { authService } from './auth-service.js';
 import {
   createAuthUi,
@@ -19,6 +20,9 @@ const remoteWeightRepository = new SupabaseWeightRepository({
   clientFactory: () => authService.getClient()
 });
 const remoteDailySummaryRepository = new SupabaseDailySummaryRepository({
+  clientFactory: () => authService.getClient()
+});
+const remoteHealthMetricsRepository = new SupabaseHealthMetricsRepository({
   clientFactory: () => authService.getClient()
 });
 
@@ -47,6 +51,7 @@ async function handleSessionChange(session) {
     activeUserId = null;
     state.weights = [];
     state.days = [];
+    state.healthMetrics = [];
     resetWeightForm();
     renderState();
     return;
@@ -56,13 +61,22 @@ async function handleSessionChange(session) {
   weightRepository = remoteWeightRepository;
 
   try {
-    const remoteState = { ...state, weights: [], days: [] };
+    const remoteState = {
+      ...state,
+      weights: [],
+      days: [],
+      healthMetrics: []
+    };
+
     await Promise.all([
       remoteWeightRepository.initialize(remoteState, { userId }),
-      remoteDailySummaryRepository.initialize(remoteState, { userId })
+      remoteDailySummaryRepository.initialize(remoteState, { userId }),
+      remoteHealthMetricsRepository.initialize(remoteState, { userId })
     ]);
+
     state.weights = remoteState.weights;
     state.days = remoteState.days;
+    state.healthMetrics = remoteState.healthMetrics;
     setAccountFormsEnabled(true);
   } catch (error) {
     state.weights = [];
