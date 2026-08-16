@@ -78,8 +78,8 @@ final class HealthKitManager: ObservableObject {
     }
 
     func startObservers(
-        onStepsChanged: @escaping () -> Void,
-        onWorkoutsChanged: @escaping () -> Void
+        onStepsChanged: @escaping () async -> Void,
+        onWorkoutsChanged: @escaping () async -> Void
     ) {
         if let stepType = HKObjectType.quantityType(
             forIdentifier: .stepCount
@@ -88,11 +88,15 @@ final class HealthKitManager: ObservableObject {
                 sampleType: stepType,
                 predicate: nil
             ) { _, completionHandler, error in
-                if error == nil {
-                    onStepsChanged()
+                guard error == nil else {
+                    completionHandler()
+                    return
                 }
 
-                completionHandler()
+                Task {
+                    await onStepsChanged()
+                    completionHandler()
+                }
             }
 
             healthStore.execute(stepObserver)
@@ -102,11 +106,15 @@ final class HealthKitManager: ObservableObject {
             sampleType: HKObjectType.workoutType(),
             predicate: nil
         ) { _, completionHandler, error in
-            if error == nil {
-                onWorkoutsChanged()
+            guard error == nil else {
+                completionHandler()
+                return
             }
 
-            completionHandler()
+            Task {
+                await onWorkoutsChanged()
+                completionHandler()
+            }
         }
 
         healthStore.execute(workoutObserver)
