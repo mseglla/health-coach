@@ -161,6 +161,9 @@ struct ContentView: View {
             }
             .navigationTitle("ATLES Health")
         }
+        .task {
+            await auth.restoreSession()
+        }
     }
 
     private func workoutName(_ workout: HKWorkout) -> String {
