@@ -53,6 +53,83 @@ final class HealthKitManager: ObservableObject {
         }
     }
 
+    func enableBackgroundDelivery() async {
+        guard HKHealthStore.isHealthDataAvailable() else {
+            return
+        }
+
+        let types: [(HKSampleType, HKUpdateFrequency)] = [
+            (
+                HKObjectType.quantityType(forIdentifier: .stepCount),
+                .hourly
+            ),
+            (
+                HKObjectType.workoutType(),
+                .immediate
+            )
+        ].compactMap { type, frequency in
+            guard let type else { return nil }
+            return (type, frequency)
+        }
+
+        for (type, frequency) in types {
+            do {
+                try await healthStore.enableBackgroundDelivery(
+                    for: type,
+                    frequency: frequency
+                )
+
+            } catch {
+                await MainActor.run {
+                    authorizationError = error.localizedDescription
+                }
+            }
+        }
+    }
+
+    func startObservers(
+        onStepsChanged: @escaping () async -> Void,
+        onWorkoutsChanged: @escaping () async -> Void
+    ) {
+        if let stepType = HKObjectType.quantityType(
+            forIdentifier: .stepCount
+        ) {
+            let stepObserver = HKObserverQuery(
+                sampleType: stepType,
+                predicate: nil
+            ) { _, completionHandler, error in
+                guard error == nil else {
+                    completionHandler()
+                    return
+                }
+
+                Task {
+                    await onStepsChanged()
+                    completionHandler()
+                }
+            }
+
+            healthStore.execute(stepObserver)
+        }
+
+        let workoutObserver = HKObserverQuery(
+            sampleType: HKObjectType.workoutType(),
+            predicate: nil
+        ) { _, completionHandler, error in
+            guard error == nil else {
+                completionHandler()
+                return
+            }
+
+            Task {
+                await onWorkoutsChanged()
+                completionHandler()
+            }
+        }
+
+        healthStore.execute(workoutObserver)
+    }
+
     func loadTodaySteps() async {
         guard let stepType = HKQuantityType.quantityType(
             forIdentifier: .stepCount
