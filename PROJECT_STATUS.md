@@ -8,9 +8,9 @@ Construir un sistema personal de salut i rendiment que integri Apple Watch i App
 
 ## Estat global
 
-- **Fase actual:** Fase 1B — Prova tècnica Apple Health
+- **Fase actual:** Fase 2 — Nucli personal de salut
 - **Estat:** en curs
-- **Pròxima fita:** validar la sincronització automàtica d'entrenaments en segon pla
+- **Pròxima fita:** continuar la Fase 2 segons el roadmap, començant per perfil i objectius
 - **Branca d’integració:** `develop`
 - **Producció estable:** `main`
 
@@ -89,7 +89,7 @@ Un usuari pot autenticar-se, llegir i modificar les seves dades amb connexió, r
 - [x] Importar almenys passos i entrenaments.
 - [x] Provar deduplicació i sincronització segura amb dades reals de HealthKit.
 - [x] Validar sincronització automàtica de passos en segon pla.
-- [ ] Validar sincronització automàtica d'entrenaments en segon pla.
+- [x] Validar sincronització automàtica d'entrenaments en segon pla.
 
 ### Base HealthKit validada 2026-08-10
 
@@ -115,13 +115,28 @@ Un usuari pot autenticar-se, llegir i modificar les seves dades amb connexió, r
 - Deduplicació real de passos validada: una única fila per `(user_id, metric_date, metric_type, source)` actualitzada mitjançant upsert.
 - HealthKit Background Delivery i `HKObserverQuery` implementats.
 - Sincronització automàtica de passos en segon pla validada en dispositiu real sense prémer cap botó.
-- Sincronització automàtica d'entrenaments en segon pla pendent de validació.
 - Branca de treball: `feature/healthkit-supabase-sync`.
-- Últim checkpoint validat: `585b583`.
+- Últim checkpoint validat de la sessió persistent: `2299084`.
+
+### Validació background d'entrenaments 2026-08-17
+
+- Sessió del connector persistent després de tancar i reobrir l'app, amb credencials conservades al Keychain.
+- Eliminada la competició entre múltiples instàncies de `SupabaseAuthManager`; UI i sincronització en segon pla comparteixen una única sessió.
+- HealthKit Background Delivery confirmat per `stepCount` i `workout`.
+- Passos configurats amb freqüència `.hourly`.
+- Entrenaments configurats amb freqüència `.immediate`.
+- `HKObserverQuery` d'entrenaments validat en un iPhone real.
+- Entrenament iniciat a `2026-08-17 20:15:34+00` i finalitzat a `20:16:36+00`.
+- Sense obrir ATLES Connector, HealthKit va activar l'observer a `20:23:02+00` després de desbloquejar l'iPhone.
+- El mateix entrenament va arribar automàticament a `activity_logs` amb `imported_at = 2026-08-17 20:23:02+00`.
+- Validat, per tant, el flux automàtic `HealthKit → connector iOS en segon pla → Supabase`.
+- Commit final de la prova tècnica: `459c44c`.
 
 ### Criteri de sortida
 
 Demostrar amb dades reals que el flux `Apple Watch → Apple Health → connector iOS → Supabase → ATLES` és viable.
+
+**Criteri assolit el 2026-08-17.**
 
 ## Fase 2 — Nucli personal de salut
 
