@@ -58,17 +58,27 @@ final class HealthKitManager: ObservableObject {
             return
         }
 
-        let types: [HKSampleType] = [
-            HKObjectType.quantityType(forIdentifier: .stepCount),
-            HKObjectType.workoutType()
-        ].compactMap { $0 }
+        let types: [(HKSampleType, HKUpdateFrequency)] = [
+            (
+                HKObjectType.quantityType(forIdentifier: .stepCount),
+                .hourly
+            ),
+            (
+                HKObjectType.workoutType(),
+                .immediate
+            )
+        ].compactMap { type, frequency in
+            guard let type else { return nil }
+            return (type, frequency)
+        }
 
-        for type in types {
+        for (type, frequency) in types {
             do {
                 try await healthStore.enableBackgroundDelivery(
                     for: type,
-                    frequency: .hourly
+                    frequency: frequency
                 )
+
             } catch {
                 await MainActor.run {
                     authorizationError = error.localizedDescription
