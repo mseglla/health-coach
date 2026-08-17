@@ -10,6 +10,9 @@ import Combine
 
 @MainActor
 final class SupabaseAuthManager: ObservableObject {
+    static let shared = SupabaseAuthManager()
+
+    private var restoreTask: Task<Void, Never>?
     @Published var isAuthenticated = false
     @Published var userId: String?
     @Published var errorMessage: String?
@@ -107,6 +110,29 @@ final class SupabaseAuthManager: ObservableObject {
     }
 
     func restoreSession() async {
+        if isAuthenticated, accessToken != nil {
+            return
+        }
+
+        if let restoreTask {
+            await restoreTask.value
+            return
+        }
+
+        let task = Task { @MainActor [weak self] in
+            guard let self else {
+                return
+            }
+
+            await self.performRestoreSession()
+        }
+
+        restoreTask = task
+        await task.value
+        restoreTask = nil
+    }
+
+    private func performRestoreSession() async {
         errorMessage = nil
 
         do {
@@ -119,9 +145,7 @@ final class SupabaseAuthManager: ObservableObject {
             try await refreshSession(
                 refreshToken: refreshToken
             )
-
         } catch {
-            signOut()
             errorMessage = error.localizedDescription
         }
     }

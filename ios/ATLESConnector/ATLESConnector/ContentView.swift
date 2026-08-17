@@ -10,7 +10,7 @@ import HealthKit
 
 struct ContentView: View {
     @StateObject private var healthKit = HealthKitManager()
-    @StateObject private var auth = SupabaseAuthManager()
+    @ObservedObject private var auth = SupabaseAuthManager.shared
     @StateObject private var sync = SupabaseHealthSyncManager()
 
     @State private var email = ""

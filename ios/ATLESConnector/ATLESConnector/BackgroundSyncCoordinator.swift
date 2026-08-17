@@ -3,7 +3,7 @@ import Foundation
 @MainActor
 final class BackgroundSyncCoordinator {
     private let healthKit = HealthKitManager()
-    private let auth = SupabaseAuthManager()
+    private let auth = SupabaseAuthManager.shared
     private let sync = SupabaseHealthSyncManager()
 
     func enableBackgroundDelivery() async {
