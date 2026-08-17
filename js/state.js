@@ -11,6 +11,7 @@ const defaultState = {
     goal: 85,
     targetDate: '2026-11-30'
   },
+  profile: null,
   days: [],
   weights: [],
   healthMetrics: [],

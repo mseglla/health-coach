@@ -5,6 +5,7 @@ import { WeightRepository } from './weight-repository.js';
 import { SupabaseWeightRepository } from './supabase-weight-repository.js';
 import { SupabaseDailySummaryRepository } from './supabase-daily-summary-repository.js';
 import { SupabaseHealthMetricsRepository } from './supabase-health-metrics-repository.js';
+import { SupabaseProfileRepository } from './supabase-profile-repository.js';
 import { authService } from './auth-service.js';
 import {
   createAuthUi,
@@ -23,6 +24,9 @@ const remoteDailySummaryRepository = new SupabaseDailySummaryRepository({
   clientFactory: () => authService.getClient()
 });
 const remoteHealthMetricsRepository = new SupabaseHealthMetricsRepository({
+  clientFactory: () => authService.getClient()
+});
+const remoteProfileRepository = new SupabaseProfileRepository({
   clientFactory: () => authService.getClient()
 });
 
@@ -49,6 +53,7 @@ async function handleSessionChange(session) {
 
   if (!userId) {
     activeUserId = null;
+    state.profile = null;
     state.weights = [];
     state.days = [];
     state.healthMetrics = [];
@@ -63,16 +68,30 @@ async function handleSessionChange(session) {
   try {
     const remoteState = {
       ...state,
+      profile: null,
       weights: [],
       days: [],
       healthMetrics: []
     };
 
     await Promise.all([
+      remoteProfileRepository.initialize(remoteState, { userId }),
       remoteWeightRepository.initialize(remoteState, { userId }),
       remoteDailySummaryRepository.initialize(remoteState, { userId }),
       remoteHealthMetricsRepository.initialize(remoteState, { userId })
     ]);
+
+    state.profile = remoteState.profile;
+
+    if (!state.profile) {
+      state.profile = await remoteProfileRepository.save(remoteState, {
+        displayName: state.settings.name || null,
+        birthDate: null,
+        heightCm: state.settings.height ?? null,
+        metabolicSex: state.settings.sex || null,
+        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || 'Europe/Madrid'
+      });
+    }
 
     state.weights = remoteState.weights;
     state.days = remoteState.days;
