@@ -10,7 +10,7 @@ Construir un sistema personal de salut i rendiment que integri Apple Watch i App
 
 - **Fase actual:** Fase 2 — Nucli personal de salut
 - **Estat:** en curs
-- **Pròxima fita:** continuar la Fase 2 segons el roadmap, començant per perfil i objectius
+- **Pròxima fita:** continuar la Fase 2 amb pes i mesures
 - **Branca d’integració:** `develop`
 - **Producció estable:** `main`
 
@@ -140,7 +140,7 @@ Demostrar amb dades reals que el flux `Apple Watch → Apple Health → connecto
 
 ## Fase 2 — Nucli personal de salut
 
-- [ ] Perfil i objectius.
+- [x] Perfil i objectius.
 - [ ] Pes i mesures.
 - [ ] Àpats i nutrició bàsica.
 - [ ] Activitat i entrenaments manuals.
@@ -148,6 +148,21 @@ Demostrar amb dades reals que el flux `Apple Watch → Apple Health → connecto
 - [ ] Dashboard diari.
 - [ ] Historial i gràfiques.
 - [ ] Registre ràpid.
+
+### Validació Perfil i objectius 2026-08-18
+
+- `profiles` connectat a Supabase com a font de veritat del perfil.
+- Nom, data de naixement, alçada, sexe metabòlic i zona horària carregats i guardats remotament.
+- L’edat es deriva de la data de naixement per als càlculs metabòlics.
+- Eliminats els valors personals hardcoded de l’estat inicial.
+- `goals` generalitzat per suportar objectius més enllà del pes mitjançant `goal_type`, `target_value`, `target_unit`, `metadata` i `is_primary`.
+- Objectiu de pes carregat, creat i modificat contra Supabase.
+- L’objectiu actiu es mostra al dashboard i conserva els canvis després de recarregar.
+- Migració des dels valors locals antics `settings.goal` i `settings.targetDate` preparada.
+- Les dades remotes de perfil i objectius no s’utilitzen com a font autoritativa del storage local.
+- Service worker limitat a assets GET del mateix origen i actualitzat amb els nous repositoris.
+- Validació funcional real completada en navegador local.
+- Commits principals: `5f3b67e` i `282bbec`.
 
 ## Fase 3 — Apple Health complet
 
