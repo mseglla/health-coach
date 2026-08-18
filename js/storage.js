@@ -32,6 +32,7 @@ function normalizeState(raw) {
     settings: { ...fallback.settings, ...(raw.settings || {}) },
     profile: null,
     goals: [],
+    bodyMeasurements: [],
     healthMetrics: [],
     activities: [],
     days: days.map(({ weight, ...day }) => day),

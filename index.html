@@ -139,6 +139,56 @@
           <div id="weightHistory" class="record-list"></div>
         </section>
 
+        <form id="waistForm" class="surface-card form-card">
+          <input id="waistRecordId" type="hidden" />
+          <div class="section-title-row section-title-row--form">
+            <div>
+              <span class="section-kicker">MESURES</span>
+              <h2>Cintura</h2>
+            </div>
+            <span class="chip">manual</span>
+          </div>
+
+          <div class="form-grid">
+            <label class="field">
+              <span>Perímetre de cintura</span>
+              <div class="field__control">
+                <input id="waistInput" inputmode="decimal" placeholder="95,0" />
+                <em>cm</em>
+              </div>
+            </label>
+
+            <label class="field">
+              <span>Quan l’has mesurat?</span>
+              <div class="field__control">
+                <input id="waistMeasuredAt" type="datetime-local" />
+              </div>
+            </label>
+          </div>
+
+          <div class="button-row">
+            <button class="button button--primary" type="submit">
+              <span id="waistSubmitLabel">Guardar cintura</span>
+            </button>
+            <button
+              id="cancelWaistEdit"
+              class="button button--ghost button--compact"
+              type="button"
+              hidden
+            >
+              Cancel·lar
+            </button>
+          </div>
+        </form>
+
+        <section class="surface-card">
+          <div class="section-title-row">
+            <h2>Historial de cintura</h2>
+            <span class="chip">editable</span>
+          </div>
+          <div id="waistHistory" class="record-list"></div>
+        </section>
+
         <form id="dayForm" class="surface-card form-card">
           <div class="section-title-row section-title-row--form">
             <div>
