@@ -85,11 +85,25 @@ export function renderApp(state, today) {
   const avg = averageWeight(state.weights, 7);
   const trend = weightTrend(state.weights);
   const decision = getCoachDecision(state, day);
+  const goals = Array.isArray(state.goals) ? state.goals : [];
+  const primaryGoal =
+    goals.find(goal => goal.isPrimary) ||
+    goals[0] ||
+    null;
+  const weightGoal =
+    goals.find(goal => goal.goalType === 'weight') ||
+    null;
 
-  $('greetingName').textContent = state.settings.name || 'Marc';
-  $('missionGoal').textContent = formatKg(state.settings.goal);
-  $('missionDate').textContent = formatDateShort(state.settings.targetDate);
-  $('missionDays').textContent = `${daysUntil(state.settings.targetDate) ?? '—'} dies`;
+  $('greetingName').textContent =
+    state.profile?.displayName || '';
+  $('missionGoal').textContent =
+    primaryGoal?.goalType === 'weight'
+      ? formatKg(primaryGoal.targetValue)
+      : primaryGoal?.title || '—';
+  $('missionDate').textContent =
+    formatDateShort(primaryGoal?.targetDate);
+  $('missionDays').textContent =
+    `${daysUntil(primaryGoal?.targetDate) ?? '—'} dies`;
   $('weightToday').textContent = formatKg(displayWeight?.value);
   $('weightAvg').textContent = formatKg(avg);
   $('intakeToday').textContent = intake ?? 0;
@@ -106,12 +120,14 @@ export function renderApp(state, today) {
   $('intakeInput').value = day.intake ?? '';
   $('activeInput').value = day.active ?? '';
   $('totalInput').value = day.total ?? '';
-  $('nameSetting').value = state.settings.name ?? '';
-  $('ageSetting').value = state.settings.age ?? '';
-  $('heightSetting').value = state.settings.height ?? '';
-  $('sexSetting').value = state.settings.sex ?? 'male';
-  $('goalSetting').value = state.settings.goal ?? '';
-  $('dateSetting').value = state.settings.targetDate ?? '';
+  $('nameSetting').value = state.profile?.displayName ?? '';
+  $('birthDateSetting').value = state.profile?.birthDate ?? '';
+  $('heightSetting').value = state.profile?.heightCm ?? '';
+  $('sexSetting').value = state.profile?.metabolicSex ?? '';
+  $('goalSetting').value =
+    weightGoal?.targetValue ?? '';
+  $('dateSetting').value =
+    weightGoal?.targetDate ?? '';
 
   renderWeightHistory(state);
   renderRecentDays(state);

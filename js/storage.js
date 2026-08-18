@@ -30,6 +30,10 @@ function normalizeState(raw) {
   return {
     version: 3,
     settings: { ...fallback.settings, ...(raw.settings || {}) },
+    profile: null,
+    goals: [],
+    healthMetrics: [],
+    activities: [],
     days: days.map(({ weight, ...day }) => day),
     weights: migratedWeights
       .filter(item => item && Number.isFinite(Number(item.value)) && item.measuredAt)
