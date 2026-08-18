@@ -10,7 +10,7 @@ Construir un sistema personal de salut i rendiment que integri Apple Watch i App
 
 - **Fase actual:** Fase 2 — Nucli personal de salut
 - **Estat:** en curs
-- **Pròxima fita:** continuar la Fase 2 amb pes i mesures
+- **Pròxima fita:** continuar la Fase 2 amb àpats i nutrició bàsica
 - **Branca d’integració:** `develop`
 - **Producció estable:** `main`
 
@@ -141,7 +141,7 @@ Demostrar amb dades reals que el flux `Apple Watch → Apple Health → connecto
 ## Fase 2 — Nucli personal de salut
 
 - [x] Perfil i objectius.
-- [ ] Pes i mesures.
+- [x] Pes i mesures.
 - [ ] Àpats i nutrició bàsica.
 - [ ] Activitat i entrenaments manuals.
 - [ ] Check-in diari.
@@ -163,6 +163,20 @@ Demostrar amb dades reals que el flux `Apple Watch → Apple Health → connecto
 - Service worker limitat a assets GET del mateix origen i actualitzat amb els nous repositoris.
 - Validació funcional real completada en navegador local.
 - Commits principals: `5f3b67e` i `282bbec`.
+
+### Validació Pes i mesures 2026-08-18
+
+- El pes continua gestionat a Supabase amb alta, edició, soft delete, historial i recuperació remota.
+- Afegida `body_measurements` com a model genèric de mesures corporals.
+- El model admet `measurement_type`, `value`, `unit`, `measured_at` i `source`, preparant futures mesures sense redissenyar l’esquema.
+- La cintura és la primera mesura corporal visible a ATLES.
+- Alta, edició, eliminació i persistència de cintura validades contra Supabase.
+- Historial de cintura editable disponible a la UI.
+- RLS activada per limitar lectura, inserció i actualització a l’usuari autenticat.
+- Les mesures corporals remotes no s’utilitzen com a font autoritativa del storage local.
+- Migració `20260818215000_body_measurements.sql` aplicada al Supabase DEV.
+- Validació funcional real completada en navegador local.
+- Commit principal: `e685263`.
 
 ## Fase 3 — Apple Health complet
 

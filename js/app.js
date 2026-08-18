@@ -7,6 +7,7 @@ import { SupabaseDailySummaryRepository } from './supabase-daily-summary-reposit
 import { SupabaseHealthMetricsRepository } from './supabase-health-metrics-repository.js';
 import { SupabaseProfileRepository } from './supabase-profile-repository.js';
 import { SupabaseGoalRepository } from './supabase-goal-repository.js';
+import { SupabaseBodyMeasurementRepository } from './supabase-body-measurement-repository.js';
 import { authService } from './auth-service.js';
 import {
   createAuthUi,
@@ -33,6 +34,10 @@ const remoteProfileRepository = new SupabaseProfileRepository({
 const remoteGoalRepository = new SupabaseGoalRepository({
   clientFactory: () => authService.getClient()
 });
+const remoteBodyMeasurementRepository =
+  new SupabaseBodyMeasurementRepository({
+    clientFactory: () => authService.getClient()
+  });
 
 await localWeightRepository.initialize(state);
 
@@ -42,7 +47,7 @@ let weightRepository = remoteWeightRepository;
 let activeUserId = null;
 
 function setAccountFormsEnabled(enabled) {
-  [$('weightForm'), $('dayForm'), $('settingsForm')].forEach(form => {
+  [$('weightForm'), $('waistForm'), $('dayForm'), $('settingsForm')].forEach(form => {
     form.querySelectorAll('input, select, button').forEach(control => {
       control.disabled = !enabled;
     });
@@ -60,6 +65,7 @@ async function handleSessionChange(session) {
     state.profile = null;
     state.goals = [];
     state.weights = [];
+    state.bodyMeasurements = [];
     state.days = [];
     state.healthMetrics = [];
     resetWeightForm();
@@ -76,6 +82,7 @@ async function handleSessionChange(session) {
       profile: null,
       goals: [],
       weights: [],
+      bodyMeasurements: [],
       days: [],
       healthMetrics: []
     };
@@ -84,6 +91,7 @@ async function handleSessionChange(session) {
       remoteProfileRepository.initialize(remoteState, { userId }),
       remoteGoalRepository.initialize(remoteState, { userId }),
       remoteWeightRepository.initialize(remoteState, { userId }),
+      remoteBodyMeasurementRepository.initialize(remoteState, { userId }),
       remoteDailySummaryRepository.initialize(remoteState, { userId }),
       remoteHealthMetricsRepository.initialize(remoteState, { userId })
     ]);
@@ -102,6 +110,7 @@ async function handleSessionChange(session) {
 
     state.goals = remoteState.goals;
     state.weights = remoteState.weights;
+    state.bodyMeasurements = remoteState.bodyMeasurements;
     state.days = remoteState.days;
     state.healthMetrics = remoteState.healthMetrics;
 
@@ -141,8 +150,10 @@ async function handleSessionChange(session) {
     state.profile = null;
     state.goals = [];
     state.weights = [];
+    state.bodyMeasurements = [];
     state.days = [];
     resetWeightForm();
+    resetWaistForm();
     renderState();
     throw error;
   }
@@ -170,6 +181,7 @@ async function saveAndRender(message) {
         ...state,
         profile: null,
         goals: [],
+        bodyMeasurements: [],
         healthMetrics: [],
         activities: [],
         weights: localWeights,
@@ -195,6 +207,116 @@ function resetWeightForm() {
   $('weightSubmitLabel').textContent = 'Guardar pes';
   $('cancelWeightEdit').hidden = true;
 }
+
+function resetWaistForm() {
+  $('waistRecordId').value = '';
+  $('waistInput').value = '';
+  $('waistMeasuredAt').value = nowLocalDateTime();
+  $('waistSubmitLabel').textContent = 'Guardar cintura';
+  $('cancelWaistEdit').hidden = true;
+}
+
+$('waistForm').addEventListener('submit', async event => {
+  event.preventDefault();
+
+  if (!activeUserId) {
+    showToast('Inicia sessió per guardar la cintura');
+    return;
+  }
+
+  const value = parseNumber($('waistInput').value);
+  const measuredAt = $('waistMeasuredAt').value;
+  const recordId = $('waistRecordId').value;
+
+  if (!value || value < 40 || value > 200) {
+    showToast('Introdueix una cintura vàlida');
+    return;
+  }
+
+  if (!measuredAt) {
+    showToast('Indica la data i l’hora');
+    return;
+  }
+
+  try {
+    await remoteBodyMeasurementRepository.save(state, {
+      id: recordId || null,
+      type: 'waist',
+      value,
+      unit: 'cm',
+      measuredAt
+    });
+
+    resetWaistForm();
+    renderState(
+      recordId
+        ? 'Cintura actualitzada'
+        : 'Cintura guardada'
+    );
+  } catch (error) {
+    console.error('Waist save failed', error);
+    showToast(
+      error.message ||
+      'No s’ha pogut guardar la cintura'
+    );
+  }
+});
+
+$('cancelWaistEdit').addEventListener(
+  'click',
+  resetWaistForm
+);
+
+$('waistHistory').addEventListener('click', async event => {
+  const button = event.target.closest('[data-waist-action]');
+  if (!button || !activeUserId) return;
+
+  const record = remoteBodyMeasurementRepository.findById(
+    state,
+    button.dataset.id
+  );
+
+  if (!record) return;
+
+  if (button.dataset.waistAction === 'edit') {
+    $('waistRecordId').value = record.id;
+    $('waistInput').value =
+      String(record.value).replace('.', ',');
+    $('waistMeasuredAt').value =
+      record.measuredAt.slice(0, 16);
+    $('waistSubmitLabel').textContent =
+      'Actualitzar cintura';
+    $('cancelWaistEdit').hidden = false;
+    $('waistForm').scrollIntoView({
+      behavior: 'smooth',
+      block: 'start'
+    });
+  }
+
+  if (
+    button.dataset.waistAction === 'delete' &&
+    window.confirm('Vols eliminar aquesta mesura de cintura?')
+  ) {
+    try {
+      await remoteBodyMeasurementRepository.softDelete(
+        state,
+        record.id
+      );
+
+      if ($('waistRecordId').value === record.id) {
+        resetWaistForm();
+      }
+
+      renderState('Mesura de cintura eliminada');
+    } catch (error) {
+      console.error('Waist delete failed', error);
+      showToast(
+        error.message ||
+        'No s’ha pogut eliminar la cintura'
+      );
+    }
+  }
+});
 
 $('dayForm').addEventListener('submit', async event => {
   event.preventDefault();
@@ -440,6 +562,7 @@ if ('serviceWorker' in navigator && location.protocol !== 'file:') {
 }
 
 resetWeightForm();
+resetWaistForm();
 renderApp(state, todayISO());
 
 authUi.initialize().catch(() => {});

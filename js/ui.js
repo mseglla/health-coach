@@ -63,6 +63,48 @@ function renderWeightHistory(state) {
     </article>`).join('') || '<p class="empty-state">Encara no hi ha pesos registrats.</p>';
 }
 
+function renderWaistHistory(state) {
+  const records = (state.bodyMeasurements || [])
+    .filter(record =>
+      record.type === 'waist' &&
+      !record.deletedAt
+    )
+    .sort((a, b) =>
+      b.measuredAt.localeCompare(a.measuredAt)
+    )
+    .slice(0, 12);
+
+  $('waistHistory').innerHTML = records.map(record => `
+    <article class="record-row">
+      <div class="record-row__main">
+        <strong>${record.value.toFixed(1).replace('.', ',')} cm</strong>
+        <span>${formatDateTime(record.measuredAt)}</span>
+      </div>
+      <div class="record-row__actions">
+        <button
+          class="mini-button"
+          type="button"
+          data-waist-action="edit"
+          data-id="${record.id}"
+          aria-label="Editar cintura"
+        >
+          Editar
+        </button>
+        <button
+          class="mini-button mini-button--danger"
+          type="button"
+          data-waist-action="delete"
+          data-id="${record.id}"
+          aria-label="Eliminar cintura"
+        >
+          Eliminar
+        </button>
+      </div>
+    </article>
+  `).join('') ||
+    '<p class="empty-state">Encara no hi ha mesures de cintura.</p>';
+}
+
 function renderRecentDays(state) {
   $('recentEntries').innerHTML = [...state.days].reverse().slice(0, 7).map(entry => {
     const burn = totalBurn(state, entry);
@@ -130,6 +172,7 @@ export function renderApp(state, today) {
     weightGoal?.targetDate ?? '';
 
   renderWeightHistory(state);
+  renderWaistHistory(state);
   renderRecentDays(state);
 }
 

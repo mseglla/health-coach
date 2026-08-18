@@ -15,6 +15,7 @@ const defaultState = {
   goals: [],
   days: [],
   weights: [],
+  bodyMeasurements: [],
   healthMetrics: [],
   activities: []
 };

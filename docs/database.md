@@ -49,6 +49,22 @@ diferents dominis amb un contracte comú.
 ATLES pot mantenir diversos objectius actius, però només un objectiu
 actiu pot ser el principal de cada usuari.
 
+
+### body_measurements
+
+Registra mesures corporals genèriques independents del pes.
+
+- `id uuid primary key`
+- `user_id uuid not null`
+- `measurement_type text not null`
+- `value numeric not null`
+- `unit text not null`
+- `measured_at timestamptz not null`
+- `source text not null default 'manual'`
+- timestamps comuns i soft delete
+
+La primera mesura visible a ATLES és `waist`, expressada en `cm`. El model permet afegir en el futur altres mesures, com composició corporal o perímetres, sense crear una taula específica per cadascuna.
+
 ### weight_logs
 
 Registre de pes. Supabase és la font de veritat.
