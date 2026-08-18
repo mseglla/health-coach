@@ -28,16 +28,26 @@ Una fila per usuari.
 
 ### goals
 
-Permet conservar historial d’objectius.
+Permet conservar historial d’objectius i representar objectius de
+diferents dominis amb un contracte comú.
 
 - `id uuid primary key`
 - `user_id uuid not null`
-- `start_weight_kg numeric null`
-- `target_weight_kg numeric not null`
+- `goal_type text not null`
+- `title text not null`
+- `target_value numeric not null`
+- `target_unit text not null`
 - `target_date date null`
-- `weekly_goal_kg numeric null`
+- `metadata jsonb not null default '{}'`
+- `is_primary boolean not null default false`
 - `is_active boolean not null default true`
-- timestamps comuns
+- `start_weight_kg numeric null` — compatibilitat i context per objectius de pes
+- `target_weight_kg numeric null` — compatibilitat específica de pes
+- `weekly_goal_kg numeric null`
+- timestamps comuns i soft delete
+
+ATLES pot mantenir diversos objectius actius, però només un objectiu
+actiu pot ser el principal de cada usuari.
 
 ### weight_logs
 

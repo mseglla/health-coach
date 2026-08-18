@@ -12,6 +12,7 @@ const defaultState = {
     targetDate: ''
   },
   profile: null,
+  goals: [],
   days: [],
   weights: [],
   healthMetrics: [],

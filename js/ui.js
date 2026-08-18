@@ -85,12 +85,25 @@ export function renderApp(state, today) {
   const avg = averageWeight(state.weights, 7);
   const trend = weightTrend(state.weights);
   const decision = getCoachDecision(state, day);
+  const goals = Array.isArray(state.goals) ? state.goals : [];
+  const primaryGoal =
+    goals.find(goal => goal.isPrimary) ||
+    goals[0] ||
+    null;
+  const weightGoal =
+    goals.find(goal => goal.goalType === 'weight') ||
+    null;
 
   $('greetingName').textContent =
-    state.profile?.displayName || state.settings.name || '';
-  $('missionGoal').textContent = formatKg(state.settings.goal);
-  $('missionDate').textContent = formatDateShort(state.settings.targetDate);
-  $('missionDays').textContent = `${daysUntil(state.settings.targetDate) ?? '—'} dies`;
+    state.profile?.displayName || '';
+  $('missionGoal').textContent =
+    primaryGoal?.goalType === 'weight'
+      ? formatKg(primaryGoal.targetValue)
+      : primaryGoal?.title || '—';
+  $('missionDate').textContent =
+    formatDateShort(primaryGoal?.targetDate);
+  $('missionDays').textContent =
+    `${daysUntil(primaryGoal?.targetDate) ?? '—'} dies`;
   $('weightToday').textContent = formatKg(displayWeight?.value);
   $('weightAvg').textContent = formatKg(avg);
   $('intakeToday').textContent = intake ?? 0;
@@ -111,8 +124,10 @@ export function renderApp(state, today) {
   $('birthDateSetting').value = state.profile?.birthDate ?? '';
   $('heightSetting').value = state.profile?.heightCm ?? '';
   $('sexSetting').value = state.profile?.metabolicSex ?? '';
-  $('goalSetting').value = state.settings.goal ?? '';
-  $('dateSetting').value = state.settings.targetDate ?? '';
+  $('goalSetting').value =
+    weightGoal?.targetValue ?? '';
+  $('dateSetting').value =
+    weightGoal?.targetDate ?? '';
 
   renderWeightHistory(state);
   renderRecentDays(state);

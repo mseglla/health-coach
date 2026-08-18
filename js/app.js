@@ -6,6 +6,7 @@ import { SupabaseWeightRepository } from './supabase-weight-repository.js';
 import { SupabaseDailySummaryRepository } from './supabase-daily-summary-repository.js';
 import { SupabaseHealthMetricsRepository } from './supabase-health-metrics-repository.js';
 import { SupabaseProfileRepository } from './supabase-profile-repository.js';
+import { SupabaseGoalRepository } from './supabase-goal-repository.js';
 import { authService } from './auth-service.js';
 import {
   createAuthUi,
@@ -29,6 +30,9 @@ const remoteHealthMetricsRepository = new SupabaseHealthMetricsRepository({
 const remoteProfileRepository = new SupabaseProfileRepository({
   clientFactory: () => authService.getClient()
 });
+const remoteGoalRepository = new SupabaseGoalRepository({
+  clientFactory: () => authService.getClient()
+});
 
 await localWeightRepository.initialize(state);
 
@@ -39,7 +43,7 @@ let activeUserId = null;
 
 function setAccountFormsEnabled(enabled) {
   [$('weightForm'), $('dayForm'), $('settingsForm')].forEach(form => {
-    form.querySelectorAll('input, button').forEach(control => {
+    form.querySelectorAll('input, select, button').forEach(control => {
       control.disabled = !enabled;
     });
   });
@@ -54,6 +58,7 @@ async function handleSessionChange(session) {
   if (!userId) {
     activeUserId = null;
     state.profile = null;
+    state.goals = [];
     state.weights = [];
     state.days = [];
     state.healthMetrics = [];
@@ -69,6 +74,7 @@ async function handleSessionChange(session) {
     const remoteState = {
       ...state,
       profile: null,
+      goals: [],
       weights: [],
       days: [],
       healthMetrics: []
@@ -76,6 +82,7 @@ async function handleSessionChange(session) {
 
     await Promise.all([
       remoteProfileRepository.initialize(remoteState, { userId }),
+      remoteGoalRepository.initialize(remoteState, { userId }),
       remoteWeightRepository.initialize(remoteState, { userId }),
       remoteDailySummaryRepository.initialize(remoteState, { userId }),
       remoteHealthMetricsRepository.initialize(remoteState, { userId })
@@ -93,12 +100,46 @@ async function handleSessionChange(session) {
       });
     }
 
+    state.goals = remoteState.goals;
     state.weights = remoteState.weights;
     state.days = remoteState.days;
     state.healthMetrics = remoteState.healthMetrics;
+
+    const legacyTargetWeight = parseNumber(state.settings.goal);
+    const hasRemoteWeightGoal = state.goals.some(
+      goal => goal.goalType === 'weight'
+    );
+
+    if (
+      !hasRemoteWeightGoal &&
+      legacyTargetWeight != null &&
+      legacyTargetWeight > 0
+    ) {
+      const latestWeight = [...state.weights]
+        .filter(record => !record.deletedAt)
+        .sort((a, b) =>
+          a.measuredAt.localeCompare(b.measuredAt)
+        )
+        .at(-1)?.value ?? null;
+
+      await remoteGoalRepository.saveWeightGoal(state, {
+        targetWeightKg: legacyTargetWeight,
+        targetDate: state.settings.targetDate || null,
+        startWeightKg: latestWeight
+      });
+    }
+
+    // Legacy values stop being authoritative after migration.
+    state.settings = {
+      ...state.settings,
+      goal: null,
+      targetDate: ''
+    };
+
     setAccountFormsEnabled(true);
   } catch (error) {
     state.profile = null;
+    state.goals = [];
     state.weights = [];
     state.days = [];
     resetWeightForm();
@@ -125,7 +166,15 @@ function renderState(message) {
 
 async function saveAndRender(message) {
   const stateToPersist = activeUserId
-    ? { ...state, weights: localWeights, days: localDays }
+    ? {
+        ...state,
+        profile: null,
+        goals: [],
+        healthMetrics: [],
+        activities: [],
+        weights: localWeights,
+        days: localDays
+      }
     : state;
 
   await storageService.persistState(stateToPersist);
@@ -245,7 +294,7 @@ $('settingsForm').addEventListener('submit', async event => {
   event.preventDefault();
 
   if (!activeUserId) {
-    showToast('Inicia sessió per guardar el perfil');
+    showToast('Inicia sessió per guardar el perfil i els objectius');
     return;
   }
 
@@ -253,6 +302,8 @@ $('settingsForm').addEventListener('submit', async event => {
   const birthDate = $('birthDateSetting').value || null;
   const heightCm = parseNumber($('heightSetting').value);
   const metabolicSex = $('sexSetting').value || null;
+  const targetWeightKg = parseNumber($('goalSetting').value);
+  const targetDate = $('dateSetting').value || null;
 
   if (heightCm != null && (heightCm < 100 || heightCm > 250)) {
     showToast('Introdueix una altura vàlida');
@@ -261,6 +312,19 @@ $('settingsForm').addEventListener('submit', async event => {
 
   if (birthDate && birthDate > todayISO()) {
     showToast('La data de naixement no pot ser futura');
+    return;
+  }
+
+  if (
+    targetWeightKg != null &&
+    (targetWeightKg < 30 || targetWeightKg > 300)
+  ) {
+    showToast('Introdueix un pes objectiu vàlid');
+    return;
+  }
+
+  if (targetDate && targetDate < todayISO()) {
+    showToast('La data objectiu no pot ser anterior a avui');
     return;
   }
 
@@ -276,17 +340,36 @@ $('settingsForm').addEventListener('submit', async event => {
         'Europe/Madrid'
     });
 
-    // Temporalment els objectius antics continuen aquí fins al bloc Goals.
+    if (targetWeightKg != null) {
+      const latestWeight = [...state.weights]
+        .filter(record => !record.deletedAt)
+        .sort((a, b) =>
+          a.measuredAt.localeCompare(b.measuredAt)
+        )
+        .at(-1)?.value ?? null;
+
+      await remoteGoalRepository.saveWeightGoal(state, {
+        targetWeightKg,
+        targetDate,
+        startWeightKg: latestWeight
+      });
+    } else {
+      await remoteGoalRepository.deactivateWeightGoal(state);
+    }
+
     state.settings = {
       ...state.settings,
-      goal: parseNumber($('goalSetting').value),
-      targetDate: $('dateSetting').value
+      goal: null,
+      targetDate: ''
     };
 
-    await saveAndRender('Perfil actualitzat');
+    await saveAndRender('Perfil i objectiu actualitzats');
   } catch (error) {
-    console.error('Profile save failed', error);
-    showToast(error.message || 'No s’ha pogut guardar el perfil');
+    console.error('Profile or goal save failed', error);
+    showToast(
+      error.message ||
+      'No s’han pogut guardar el perfil i l’objectiu'
+    );
   }
 });
 
