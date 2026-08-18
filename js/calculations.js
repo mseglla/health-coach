@@ -54,6 +54,22 @@ export function dailyWeightSeries(weights = []) {
   return [...byDate.values()].sort((a, b) => a.measuredAt.localeCompare(b.measuredAt));
 }
 
+export function ageFromBirthDate(birthDate, today = new Date()) {
+  if (!birthDate) return null;
+
+  const [year, month, day] = birthDate.split('-').map(Number);
+  if (!year || !month || !day) return null;
+
+  let age = today.getFullYear() - year;
+  const birthdayPassed =
+    today.getMonth() + 1 > month ||
+    (today.getMonth() + 1 === month && today.getDate() >= day);
+
+  if (!birthdayPassed) age -= 1;
+
+  return age > 0 ? age : null;
+}
+
 export function bmr(settings, weight) {
   if (!weight || !settings.age || !settings.height) return null;
   const sexAdjustment = settings.sex === 'male' ? 5 : -161;
@@ -62,7 +78,17 @@ export function bmr(settings, weight) {
 
 export function totalBurn(state, day) {
   if (day?.total != null) return Math.round(day.total);
-  const basal = bmr(state.settings, latestWeight(state.weights));
+
+  const profile = state.profile;
+  const metabolicSettings = profile
+    ? {
+        age: ageFromBirthDate(profile.birthDate) ?? state.settings.age,
+        height: profile.heightCm ?? state.settings.height,
+        sex: profile.metabolicSex ?? state.settings.sex
+      }
+    : state.settings;
+
+  const basal = bmr(metabolicSettings, latestWeight(state.weights));
   return basal ? Math.round(basal + (day?.active || 0)) : null;
 }
 
