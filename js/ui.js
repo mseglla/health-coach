@@ -86,7 +86,8 @@ export function renderApp(state, today) {
   const trend = weightTrend(state.weights);
   const decision = getCoachDecision(state, day);
 
-  $('greetingName').textContent = state.settings.name || 'Marc';
+  $('greetingName').textContent =
+    state.profile?.displayName || state.settings.name || '';
   $('missionGoal').textContent = formatKg(state.settings.goal);
   $('missionDate').textContent = formatDateShort(state.settings.targetDate);
   $('missionDays').textContent = `${daysUntil(state.settings.targetDate) ?? '—'} dies`;
@@ -106,10 +107,10 @@ export function renderApp(state, today) {
   $('intakeInput').value = day.intake ?? '';
   $('activeInput').value = day.active ?? '';
   $('totalInput').value = day.total ?? '';
-  $('nameSetting').value = state.settings.name ?? '';
-  $('ageSetting').value = state.settings.age ?? '';
-  $('heightSetting').value = state.settings.height ?? '';
-  $('sexSetting').value = state.settings.sex ?? 'male';
+  $('nameSetting').value = state.profile?.displayName ?? '';
+  $('birthDateSetting').value = state.profile?.birthDate ?? '';
+  $('heightSetting').value = state.profile?.heightCm ?? '';
+  $('sexSetting').value = state.profile?.metabolicSex ?? '';
   $('goalSetting').value = state.settings.goal ?? '';
   $('dateSetting').value = state.settings.targetDate ?? '';
 

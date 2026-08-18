@@ -80,13 +80,11 @@ export function totalBurn(state, day) {
   if (day?.total != null) return Math.round(day.total);
 
   const profile = state.profile;
-  const metabolicSettings = profile
-    ? {
-        age: ageFromBirthDate(profile.birthDate) ?? state.settings.age,
-        height: profile.heightCm ?? state.settings.height,
-        sex: profile.metabolicSex ?? state.settings.sex
-      }
-    : state.settings;
+  const metabolicSettings = {
+    age: ageFromBirthDate(profile?.birthDate),
+    height: profile?.heightCm,
+    sex: profile?.metabolicSex
+  };
 
   const basal = bmr(metabolicSettings, latestWeight(state.weights));
   return basal ? Math.round(basal + (day?.active || 0)) : null;

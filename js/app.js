@@ -38,7 +38,7 @@ let weightRepository = remoteWeightRepository;
 let activeUserId = null;
 
 function setAccountFormsEnabled(enabled) {
-  [$('weightForm'), $('dayForm')].forEach(form => {
+  [$('weightForm'), $('dayForm'), $('settingsForm')].forEach(form => {
     form.querySelectorAll('input, button').forEach(control => {
       control.disabled = !enabled;
     });
@@ -98,6 +98,7 @@ async function handleSessionChange(session) {
     state.healthMetrics = remoteState.healthMetrics;
     setAccountFormsEnabled(true);
   } catch (error) {
+    state.profile = null;
     state.weights = [];
     state.days = [];
     resetWeightForm();
@@ -242,15 +243,51 @@ $('weightHistory').addEventListener('click', async event => {
 
 $('settingsForm').addEventListener('submit', async event => {
   event.preventDefault();
-  state.settings = {
-    name: $('nameSetting').value.trim() || 'Marc',
-    age: parseNumber($('ageSetting').value),
-    height: parseNumber($('heightSetting').value),
-    sex: $('sexSetting').value,
-    goal: parseNumber($('goalSetting').value),
-    targetDate: $('dateSetting').value
-  };
-  await saveAndRender('Configuració actualitzada');
+
+  if (!activeUserId) {
+    showToast('Inicia sessió per guardar el perfil');
+    return;
+  }
+
+  const displayName = $('nameSetting').value.trim();
+  const birthDate = $('birthDateSetting').value || null;
+  const heightCm = parseNumber($('heightSetting').value);
+  const metabolicSex = $('sexSetting').value || null;
+
+  if (heightCm != null && (heightCm < 100 || heightCm > 250)) {
+    showToast('Introdueix una altura vàlida');
+    return;
+  }
+
+  if (birthDate && birthDate > todayISO()) {
+    showToast('La data de naixement no pot ser futura');
+    return;
+  }
+
+  try {
+    await remoteProfileRepository.save(state, {
+      displayName: displayName || null,
+      birthDate,
+      heightCm,
+      metabolicSex,
+      timezone:
+        Intl.DateTimeFormat().resolvedOptions().timeZone ||
+        state.profile?.timezone ||
+        'Europe/Madrid'
+    });
+
+    // Temporalment els objectius antics continuen aquí fins al bloc Goals.
+    state.settings = {
+      ...state.settings,
+      goal: parseNumber($('goalSetting').value),
+      targetDate: $('dateSetting').value
+    };
+
+    await saveAndRender('Perfil actualitzat');
+  } catch (error) {
+    console.error('Profile save failed', error);
+    showToast(error.message || 'No s’ha pogut guardar el perfil');
+  }
 });
 
 $('exportData').addEventListener('click', () => exportState(state));
