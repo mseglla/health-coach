@@ -273,3 +273,59 @@
   background: var(--text-muted);
   vertical-align: middle;
 }
+
+
+.quick-log-card {
+  display: grid;
+  gap: 1rem;
+}
+
+.quick-log-card h2 {
+  margin: 0.25rem 0 0;
+}
+
+.quick-log-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.quick-log-action {
+  display: grid;
+  gap: 0.25rem;
+  min-height: 7rem;
+  padding: 1rem;
+  text-align: left;
+  border: 1px solid var(--border);
+  border-radius: 1rem;
+  background: rgba(255, 255, 255, 0.025);
+  color: inherit;
+  cursor: pointer;
+}
+
+.quick-log-action:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.quick-log-action > span {
+  font-size: 1.5rem;
+}
+
+.quick-log-action strong {
+  font-size: 1.1rem;
+}
+
+.quick-log-action small {
+  color: var(--text-muted);
+}
+
+.quick-log-fallback {
+  justify-self: start;
+  width: auto;
+}
+
+@media (max-width: 560px) {
+  .quick-log-actions {
+    grid-template-columns: 1fr 1fr;
+  }
+}

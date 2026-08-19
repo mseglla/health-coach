@@ -1,1 +1,1 @@
-const CACHE = 'health-coach-v25';\n
+const CACHE = 'health-coach-v27';\n

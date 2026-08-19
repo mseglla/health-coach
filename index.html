@@ -142,12 +142,55 @@
         <header class="screen-header screen-header--compact">
           <div>
             <p class="eyebrow">REGISTRE</p>
-            <h1 id="log-title">Avui</h1>
-            <p class="screen-subtitle">Ràpid, editable i sense perdre historial.</p>
+            <h1 id="log-title">Registre ràpid</h1>
+            <p class="screen-subtitle">
+              Només allò que ATLES encara no pot captar automàticament.
+            </p>
           </div>
         </header>
 
-        <form id="weightForm" class="surface-card form-card form-card--accent">
+        <section class="surface-card quick-log-card">
+          <div>
+            <span class="section-kicker">QUÈ VOLS REGISTRAR?</span>
+            <h2>Un toc i prou.</h2>
+          </div>
+
+          <div class="quick-log-actions">
+            <button
+              class="quick-log-action"
+              type="button"
+              data-quick-log="weight"
+            >
+              <span>⚖</span>
+              <strong>Pes</strong>
+              <small>Nova mesura</small>
+            </button>
+
+            <button
+              class="quick-log-action"
+              type="button"
+              data-quick-log="waist"
+            >
+              <span>◎</span>
+              <strong>Cintura</strong>
+              <small>Perímetre manual</small>
+            </button>
+          </div>
+
+          <button
+            class="button button--ghost quick-log-fallback"
+            type="button"
+            data-quick-log="energy"
+          >
+            + Registrar activitat manualment
+          </button>
+        </section>
+
+        <form
+          id="weightForm"
+          class="surface-card form-card form-card--accent"
+          hidden
+        >
           <div class="section-title-row section-title-row--form">
             <div>
               <span class="section-kicker">PES</span>
@@ -180,7 +223,11 @@
           <div id="weightHistory" class="record-list"></div>
         </section>
 
-        <form id="waistForm" class="surface-card form-card">
+        <form
+          id="waistForm"
+          class="surface-card form-card"
+          hidden
+        >
           <input id="waistRecordId" type="hidden" />
           <div class="section-title-row section-title-row--form">
             <div>
@@ -240,13 +287,17 @@
           <div id="activityHistory" class="record-list"></div>
         </section>
 
-        <form id="dayForm" class="surface-card form-card">
+        <form
+          id="dayForm"
+          class="surface-card form-card"
+          hidden
+        >
           <div class="section-title-row section-title-row--form">
             <div>
               <span class="section-kicker">ENERGIA</span>
-              <h2>Activitat i despesa</h2>
+              <h2>Entrada manual excepcional</h2>
             </div>
-            <span class="chip">avui</span>
+            <span class="chip">fallback</span>
           </div>
           <label class="field">
             <span>Calories totals</span>

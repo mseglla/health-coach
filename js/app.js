@@ -229,6 +229,42 @@ function upsertDay(data) {
   state.days.sort((a, b) => a.date.localeCompare(b.date));
 }
 
+function closeQuickLogForms() {
+  ['weightForm', 'waistForm', 'dayForm'].forEach(id => {
+    const form = $(id);
+    if (form) form.hidden = true;
+  });
+}
+
+function showQuickLogForm(type) {
+  const formIds = {
+    weight: 'weightForm',
+    waist: 'waistForm',
+    energy: 'dayForm'
+  };
+
+  const formId = formIds[type];
+  if (!formId) return;
+
+  closeQuickLogForms();
+
+  const form = $(formId);
+  form.hidden = false;
+
+  if (type === 'weight') {
+    $('weightInput').focus();
+  }
+
+  if (type === 'waist') {
+    $('waistInput').focus();
+  }
+
+  form.scrollIntoView({
+    behavior: 'smooth',
+    block: 'start'
+  });
+}
+
 function resetWeightForm() {
   $('weightRecordId').value = '';
   $('weightInput').value = '';
@@ -244,6 +280,29 @@ function resetWaistForm() {
   $('waistSubmitLabel').textContent = 'Guardar cintura';
   $('cancelWaistEdit').hidden = true;
 }
+
+document
+  .querySelectorAll('[data-quick-log]')
+  .forEach(button => {
+    button.addEventListener('click', () => {
+      if (!activeUserId) {
+        showToast('Inicia sessió per registrar dades');
+        return;
+      }
+
+      const type = button.dataset.quickLog;
+
+      if (type === 'weight') {
+        resetWeightForm();
+      }
+
+      if (type === 'waist') {
+        resetWaistForm();
+      }
+
+      showQuickLogForm(type);
+    });
+  });
 
 $('waistForm').addEventListener('submit', async event => {
   event.preventDefault();
@@ -277,6 +336,8 @@ $('waistForm').addEventListener('submit', async event => {
     });
 
     resetWaistForm();
+    closeQuickLogForms();
+
     renderState(
       recordId
         ? 'Cintura actualitzada'
@@ -293,7 +354,10 @@ $('waistForm').addEventListener('submit', async event => {
 
 $('cancelWaistEdit').addEventListener(
   'click',
-  resetWaistForm
+  () => {
+    resetWaistForm();
+    closeQuickLogForms();
+  }
 );
 
 $('waistHistory').addEventListener('click', async event => {
@@ -308,6 +372,8 @@ $('waistHistory').addEventListener('click', async event => {
   if (!record) return;
 
   if (button.dataset.waistAction === 'edit') {
+    showQuickLogForm('waist');
+
     $('waistRecordId').value = record.id;
     $('waistInput').value =
       String(record.value).replace('.', ',');
@@ -451,14 +517,26 @@ $('weightForm').addEventListener('submit', async event => {
     });
 
     resetWeightForm();
-    renderState(recordId ? 'Pes actualitzat' : 'Pes guardat');
+    closeQuickLogForms();
+
+    renderState(
+      recordId
+        ? 'Pes actualitzat'
+        : 'Pes guardat'
+    );
   } catch (error) {
     console.error('Weight save failed', error);
     showToast(error.message || 'No s’ha pogut guardar el pes');
   }
 });
 
-$('cancelWeightEdit').addEventListener('click', resetWeightForm);
+$('cancelWeightEdit').addEventListener(
+  'click',
+  () => {
+    resetWeightForm();
+    closeQuickLogForms();
+  }
+);
 
 $('weightHistory').addEventListener('click', async event => {
   const button = event.target.closest('[data-weight-action]');
@@ -470,6 +548,8 @@ $('weightHistory').addEventListener('click', async event => {
   if (!record) return;
 
   if (button.dataset.weightAction === 'edit') {
+    showQuickLogForm('weight');
+
     $('weightRecordId').value = record.id;
     $('weightInput').value = String(record.value).replace('.', ',');
     $('weightMeasuredAt').value = record.measuredAt.slice(0, 16);
@@ -641,6 +721,7 @@ if ('serviceWorker' in navigator && location.protocol !== 'file:') {
 
 resetWeightForm();
 resetWaistForm();
+closeQuickLogForms();
 renderApp(state, todayISO());
 
 authUi.initialize().catch(() => {});
