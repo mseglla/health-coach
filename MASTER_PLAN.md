@@ -297,7 +297,7 @@ Integra les recomanacions de tots els especialistes i resol conflictes. Per exem
 - [x] Calories totals derivades.
 - [x] Control de cobertura per evitar totals falsos en dies parcials.
 - [x] Refresc recent idempotent.
-- [ ] Corregir visualització de passos a la PWA: les dades existeixen a Supabase però la gràfica de 14 dies apareix buida.
+- [x] Corregir visualització de passos a la PWA: les dades existeixen a Supabase però la gràfica de 14 dies apareix buida.
 
 #### Entrenaments
 
