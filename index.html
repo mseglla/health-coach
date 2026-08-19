@@ -64,6 +64,41 @@
           </div>
         </section>
 
+        <section id="checkinPrompt" class="surface-card checkin-card" hidden>
+          <div>
+            <span class="section-kicker">CHECK-IN OPCIONAL</span>
+            <h2>Com et trobes avui?</h2>
+            <p class="checkin-card__hint">
+              Un toc i prou. Si avui no et ve de gust, ho pots ometre.
+            </p>
+          </div>
+
+          <div class="checkin-options" aria-label="Com et trobes avui?">
+            <button type="button" class="mini-button" data-feeling-score="5">Molt bé</button>
+            <button type="button" class="mini-button" data-feeling-score="4">Bé</button>
+            <button type="button" class="mini-button" data-feeling-score="3">Normal</button>
+            <button type="button" class="mini-button" data-feeling-score="2">Cansat</button>
+            <button type="button" class="mini-button" data-feeling-score="1">Molt cansat</button>
+          </div>
+
+          <details class="checkin-note">
+            <summary>Afegir una nota</summary>
+            <label class="field">
+              <span>Opcional</span>
+              <textarea id="checkinNote" rows="2" maxlength="280"
+                placeholder="Alguna cosa a destacar?"></textarea>
+            </label>
+          </details>
+
+          <button
+            type="button"
+            class="button button--ghost button--compact"
+            data-checkin-dismiss
+          >
+            Ara no
+          </button>
+        </section>
+
         <section class="metric-grid" aria-label="Mètriques principals">
           <article class="metric-card metric-card--weight">
             <span class="metric-card__label">Pes actual</span>

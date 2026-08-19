@@ -252,6 +252,21 @@ function renderRecentDays(state) {
   }).join('') || '<p class="empty-state">Encara no hi ha registres d’energia.</p>';
 }
 
+function renderCheckinPrompt(state, today) {
+  const prompt = $('checkinPrompt');
+  if (!prompt) return;
+
+  const answered = (state.checkins || []).some(
+    checkin =>
+      checkin.date === today &&
+      !checkin.deletedAt
+  );
+
+  prompt.hidden =
+    answered ||
+    Boolean(state.checkinPromptDismissed);
+}
+
 export function renderApp(state, today) {
   const day = getTodayRecord(state, today);
   const burn = totalBurn(state, day);
@@ -318,6 +333,7 @@ export function renderApp(state, today) {
   $('dateSetting').value =
     weightGoal?.targetDate ?? '';
 
+  renderCheckinPrompt(state, today);
   renderWeightHistory(state);
   renderWaistHistory(state);
   renderActivities(state);

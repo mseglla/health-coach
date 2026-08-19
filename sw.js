@@ -9,6 +9,7 @@ const ASSETS = [
   './js/supabase-daily-summary-repository.js',
   './js/supabase-health-metrics-repository.js',
   './js/supabase-activity-repository.js',
+  './js/supabase-checkin-repository.js',
   './js/supabase-profile-repository.js',
   './js/supabase-goal-repository.js',
   './js/supabase-body-measurement-repository.js',

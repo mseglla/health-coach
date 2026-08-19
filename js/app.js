@@ -6,6 +6,7 @@ import { SupabaseWeightRepository } from './supabase-weight-repository.js';
 import { SupabaseDailySummaryRepository } from './supabase-daily-summary-repository.js';
 import { SupabaseHealthMetricsRepository } from './supabase-health-metrics-repository.js';
 import { SupabaseActivityRepository } from './supabase-activity-repository.js';
+import { SupabaseCheckinRepository } from './supabase-checkin-repository.js';
 import { SupabaseProfileRepository } from './supabase-profile-repository.js';
 import { SupabaseGoalRepository } from './supabase-goal-repository.js';
 import { SupabaseBodyMeasurementRepository } from './supabase-body-measurement-repository.js';
@@ -30,6 +31,9 @@ const remoteHealthMetricsRepository = new SupabaseHealthMetricsRepository({
   clientFactory: () => authService.getClient()
 });
 const remoteActivityRepository = new SupabaseActivityRepository({
+  clientFactory: () => authService.getClient()
+});
+const remoteCheckinRepository = new SupabaseCheckinRepository({
   clientFactory: () => authService.getClient()
 });
 const remoteProfileRepository = new SupabaseProfileRepository({
@@ -73,6 +77,8 @@ async function handleSessionChange(session) {
     state.days = [];
     state.healthMetrics = [];
     state.activities = [];
+    state.checkins = [];
+    state.checkinPromptDismissed = false;
     resetWeightForm();
     renderState();
     return;
@@ -90,7 +96,9 @@ async function handleSessionChange(session) {
       bodyMeasurements: [],
       days: [],
       healthMetrics: [],
-      activities: []
+      activities: [],
+      checkins: [],
+      checkinPromptDismissed: false
     };
 
     await Promise.all([
@@ -100,7 +108,8 @@ async function handleSessionChange(session) {
       remoteBodyMeasurementRepository.initialize(remoteState, { userId }),
       remoteDailySummaryRepository.initialize(remoteState, { userId }),
       remoteHealthMetricsRepository.initialize(remoteState, { userId }),
-      remoteActivityRepository.initialize(remoteState, { userId })
+      remoteActivityRepository.initialize(remoteState, { userId }),
+      remoteCheckinRepository.initialize(remoteState, { userId })
     ]);
 
     state.profile = remoteState.profile;
@@ -121,6 +130,12 @@ async function handleSessionChange(session) {
     state.days = remoteState.days;
     state.healthMetrics = remoteState.healthMetrics;
     state.activities = remoteState.activities;
+    state.checkins = remoteState.checkins;
+
+    state.checkinPromptDismissed =
+      localStorage.getItem(
+        `atles-checkin-dismissed:${userId}:${todayISO()}`
+      ) === '1';
 
     const legacyTargetWeight = parseNumber(state.settings.goal);
     const hasRemoteWeightGoal = state.goals.some(
@@ -162,6 +177,8 @@ async function handleSessionChange(session) {
     state.days = [];
     state.healthMetrics = [];
     state.activities = [];
+    state.checkins = [];
+    state.checkinPromptDismissed = false;
     resetWeightForm();
     resetWaistForm();
     renderState();
@@ -194,6 +211,8 @@ async function saveAndRender(message) {
         bodyMeasurements: [],
         healthMetrics: [],
         activities: [],
+        checkins: [],
+        checkinPromptDismissed: false,
         weights: localWeights,
         days: localDays
       }
@@ -325,6 +344,51 @@ $('waistHistory').addEventListener('click', async event => {
         'No s’ha pogut eliminar la cintura'
       );
     }
+  }
+});
+
+$('checkinPrompt').addEventListener('click', async event => {
+  const feelingButton = event.target.closest('[data-feeling-score]');
+  const dismissButton = event.target.closest('[data-checkin-dismiss]');
+
+  if (dismissButton && activeUserId) {
+    state.checkinPromptDismissed = true;
+
+    localStorage.setItem(
+      `atles-checkin-dismissed:${activeUserId}:${todayISO()}`,
+      '1'
+    );
+
+    renderState();
+    return;
+  }
+
+  if (!feelingButton || !activeUserId) return;
+
+  const feelingScore = Number(feelingButton.dataset.feelingScore);
+  const note = $('checkinNote').value;
+
+  if (!Number.isInteger(feelingScore) ||
+      feelingScore < 1 ||
+      feelingScore > 5) {
+    return;
+  }
+
+  try {
+    await remoteCheckinRepository.save(state, {
+      date: todayISO(),
+      feelingScore,
+      note
+    });
+
+    state.checkinPromptDismissed = false;
+
+    renderState('Check-in guardat');
+  } catch (error) {
+    console.error('Check-in save failed', error);
+    showToast(
+      error.message || 'No s’ha pogut guardar el check-in'
+    );
   }
 });
 
