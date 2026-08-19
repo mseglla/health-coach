@@ -88,3 +88,31 @@
 .auth-account-email strong { color: var(--color-text); overflow-wrap: anywhere; }
 .button--text { min-height: 40px; color: var(--color-muted); background: transparent; }
 .button:disabled { cursor: wait; opacity: .55; }
+
+
+.energy-status-card {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.energy-status-card__header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.energy-status-card__header h2 {
+  margin: 0.2rem 0 0;
+}
+
+.energy-status-card__value {
+  font-size: clamp(2rem, 6vw, 3.2rem);
+  line-height: 1;
+  text-align: right;
+}
+
+.energy-status-card__detail {
+  margin: 0;
+  color: var(--text-muted);
+}

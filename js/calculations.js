@@ -112,6 +112,95 @@ export function weightTrend(weights) {
   return current != null && previous != null ? current - previous : null;
 }
 
+export function inferEnergyBalance(state) {
+  const series = dailyWeightSeries(state.weights || []);
+
+  if (series.length < 8) {
+    return {
+      available: false,
+      reason: 'insufficient_weight_data',
+      confidence: 'none'
+    };
+  }
+
+  const latestDate = recordDate(series.at(-1).measuredAt);
+  const anchor = new Date(`${latestDate}T12:00:00`);
+
+  const dateOffset = days => {
+    const date = new Date(anchor);
+    date.setDate(date.getDate() - days);
+    return localDateISO(date);
+  };
+
+  const currentStart = dateOffset(6);
+  const previousStart = dateOffset(13);
+  const previousEnd = dateOffset(7);
+
+  const inRange = (record, start, end) => {
+    const date = recordDate(record.measuredAt);
+    return date >= start && date <= end;
+  };
+
+  const current = series.filter(record =>
+    inRange(record, currentStart, latestDate)
+  );
+
+  const previous = series.filter(record =>
+    inRange(record, previousStart, previousEnd)
+  );
+
+  if (current.length < 4 || previous.length < 4) {
+    return {
+      available: false,
+      reason: 'insufficient_window_coverage',
+      confidence: 'none',
+      currentSamples: current.length,
+      previousSamples: previous.length
+    };
+  }
+
+  const mean = records =>
+    records.reduce((sum, record) => sum + record.value, 0) /
+    records.length;
+
+  const currentAverage = mean(current);
+  const previousAverage = mean(previous);
+  const weeklyWeightChangeKg = currentAverage - previousAverage;
+
+  // Approximation for first-pass inference only.
+  // Positive = estimated deficit; negative = estimated surplus.
+  const estimatedDailyBalanceKcal =
+    -(weeklyWeightChangeKg * 7700 / 7);
+
+  const absoluteBalance = Math.abs(estimatedDailyBalanceKcal);
+
+  let status = 'maintenance';
+  if (estimatedDailyBalanceKcal > 150) status = 'deficit';
+  if (estimatedDailyBalanceKcal < -150) status = 'surplus';
+
+  const confidence =
+    current.length >= 5 &&
+    previous.length >= 5 &&
+    Math.abs(weeklyWeightChangeKg) <= 1.2
+      ? 'medium'
+      : 'low';
+
+  return {
+    available: true,
+    status,
+    confidence,
+    currentSamples: current.length,
+    previousSamples: previous.length,
+    currentAverage,
+    previousAverage,
+    weeklyWeightChangeKg,
+    estimatedDailyBalanceKcal: Math.round(estimatedDailyBalanceKcal),
+    absoluteBalanceKcal: Math.round(absoluteBalance),
+    periodStart: previousStart,
+    periodEnd: latestDate
+  };
+}
+
 export function daysUntil(dateString) {
   if (!dateString) return null;
   const target = new Date(`${dateString}T12:00:00`);

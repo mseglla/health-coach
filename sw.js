@@ -1,4 +1,4 @@
-const CACHE = 'health-coach-v10';
+const CACHE = 'health-coach-v12';
 const ASSETS = [
   './', './index.html', './manifest.webmanifest', './assets/icon.svg',
   './css/tokens.css', './css/base.css', './css/components.css', './css/screens.css',
