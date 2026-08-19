@@ -10,7 +10,7 @@ Construir un sistema personal de salut i rendiment que integri Apple Watch i App
 
 - **Fase actual:** Fase 2 — Nucli personal de salut
 - **Estat:** en curs
-- **Pròxima fita:** continuar la Fase 2 amb balanç energètic i nutrició inferida
+- **Pròxima fita:** continuar la Fase 2 amb activitat i entrenaments manuals
 - **Branca d’integració:** `develop`
 - **Producció estable:** `main`
 
@@ -142,7 +142,7 @@ Demostrar amb dades reals que el flux `Apple Watch → Apple Health → connecto
 
 - [x] Perfil i objectius.
 - [x] Pes i mesures.
-- [ ] Balanç energètic i nutrició inferida.
+- [x] Balanç energètic i nutrició inferida.
 - [ ] Activitat i entrenaments manuals.
 - [ ] Check-in diari.
 - [ ] Dashboard diari.
@@ -177,6 +177,20 @@ Demostrar amb dades reals que el flux `Apple Watch → Apple Health → connecto
 - Migració `20260818215000_body_measurements.sql` aplicada al Supabase DEV.
 - Validació funcional real completada en navegador local.
 - Commit principal: `e685263`.
+
+### Validació Balanç energètic i nutrició inferida 2026-08-19
+
+- Eliminada la dependència del registre manual de calories ingerides per interpretar el balanç energètic.
+- ATLES infereix dèficit, manteniment o superàvit a partir de la tendència real del pes.
+- La primera versió compara dues finestres de 7 dies i exigeix cobertura mínima de mesures.
+- L’estimació utilitza una equivalència energètica aproximada i es mostra explícitament com a inferència, no com a fet observat.
+- S’informa del grau de confiança de la inferència.
+- El coach deixa de demanar completar la ingesta manual per poder donar una lectura.
+- El dashboard mostra balanç inferit en lloc de calories ingerides.
+- Eliminat l’anell de progrés perquè representava incorrectament una inferència de tendència com si fos un objectiu diari precís.
+- La UI definitiva de la Home queda pendent d’un redisseny posterior.
+- Validació funcional real amb dades de pes de l’usuari: dèficit inferit detectat correctament.
+- Commit principal: `beac016`.
 
 ## Fase 3 — Apple Health complet
 
