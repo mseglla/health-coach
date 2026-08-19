@@ -254,36 +254,82 @@ Integra les recomanacions de tots els especialistes i resol conflictes. Per exem
 
 **Criteri de sortida:** un usuari pot iniciar sessió, treballar offline i sincronitzar dades sense pèrdues ni accés creuat.
 
-### Fase 2 — Nucli personal de salut
+### Fase 2 — Nucli personal de salut ✅ COMPLETADA
 
 **Objectiu:** convertir ATLES en una aplicació útil cada dia.
 
-- Perfil i objectius.
-- Pes i mesures.
-- Balanç energètic i nutrició inferida.
+- [x] Perfil i objectius.
+- [x] Pes i mesures.
+- [x] Balanç energètic i nutrició inferida.
   - No requereix registre manual d’àpats ni recompte diari de calories.
-  - Inference inicial a partir de tendència de pes i dades de despesa disponibles.
-  - Dèficit, manteniment o superàvit sempre expressats com a estimació amb incertesa.
+  - Inferència inicial a partir de tendència de pes i dades de despesa disponibles.
+  - Dèficit, manteniment o superàvit expressats com a estimació amb incertesa.
   - El registre d’àpats queda com a funcionalitat futura i opcional del nutricionista.
-- Activitat i entrenaments.
-- Check-in contextual i opcional.
-- Dashboard diari.
-- Historial i gràfiques.
-- Registre ràpid.
+- [x] Activitat i entrenaments.
+- [x] Check-in contextual i opcional.
+- [x] Dashboard diari.
+- [x] Historial i gràfiques.
+- [x] Registre ràpid.
 
-**Criteri de sortida:** l’usuari pot registrar i entendre el seu dia complet des d’una única app.
+**Criteri de sortida:** completat.
 
-### Fase 3 — Dades automàtiques i Apple Health
+### Fase 3 — Dades automàtiques i Apple Health 🟡 EN CURS
 
-**Objectiu:** reduir al mínim l’entrada manual.
+**Objectiu:** reduir al mínim l’entrada manual i construir un historial fiable de llarg termini.
 
-- Importació de passos, calories, pes, son, entrenaments, HRV, freqüència cardíaca i VO₂max.
-- Deduplificació i normalització.
-- Permisos i control de fonts.
-- Sincronització incremental.
-- Transparència sobre l’origen de cada dada.
+#### Connector i infraestructura
 
-**Criteri de sortida:** ATLES disposa d’un historial fiable i automatitzat de salut i activitat.
+- [x] Connector iOS HealthKit → Supabase.
+- [x] Autorització HealthKit.
+- [x] Background Delivery validat en dispositiu real.
+- [x] Observer de passos.
+- [x] Observer d’entrenaments.
+- [x] Upsert i deduplicació a Supabase.
+- [x] Importació històrica + refresc recent.
+- [x] Migració de tipus de mètriques diàries.
+
+#### Activitat diària
+
+- [x] Passos.
+- [x] Distància caminant/corrent.
+- [x] Calories actives.
+- [x] Calories de repòs.
+- [x] Calories totals derivades.
+- [x] Control de cobertura per evitar totals falsos en dies parcials.
+- [x] Refresc recent idempotent.
+- [ ] Corregir visualització de passos a la PWA: les dades existeixen a Supabase però la gràfica de 14 dies apareix buida.
+
+#### Entrenaments
+
+- [x] Importació històrica completa.
+- [x] 519 entrenaments HealthKit validats.
+- [x] Historial disponible des de 2019.
+- [x] Deduplicació per UUID HealthKit.
+- [x] Refresc recent.
+- [x] Tipus principals normalitzats.
+- [x] Freqüència cardíaca mitjana/màxima dins dels entrenaments quan HealthKit la proporciona.
+- [x] Potència mitjana/màxima per running/cycling quan HealthKit la proporciona.
+
+#### Salut i recuperació pendents
+
+- [ ] Freqüència cardíaca general.
+- [ ] Freqüència cardíaca en repòs.
+- [ ] HRV.
+- [ ] Son.
+- [ ] VO₂max.
+- [ ] Pes procedent de fonts HealthKit compatibles.
+- [ ] Composició corporal procedent de fonts compatibles.
+
+#### Qualitat de dades
+
+- [x] No inventar zeros quan no hi ha dades.
+- [x] Distingir dies parcialment coberts.
+- [x] Mantenir les dades originals i derivar `total_kcal`.
+- [ ] Estratègia explícita de dades eliminades/modificades a HealthKit.
+- [ ] Transparència de fonts a la PWA.
+- [ ] Validació final de permisos i casos límit.
+
+**Criteri de sortida:** ATLES disposa d’un historial fiable i automatitzat de salut i activitat, sincronitzat sense intervenció manual i interpretat correctament per la PWA.
 
 ### Fase 4 — Primers coaches útils
 
