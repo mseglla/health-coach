@@ -41,13 +41,28 @@ final class BackgroundSyncCoordinator {
             return
         }
 
-        await healthKit.loadTodaySteps()
+        do {
+            let metrics =
+                try await healthKit.loadRecentStepHistory(
+                    days: 7
+                )
 
-        await sync.syncTodaySteps(
-            steps: healthKit.todaySteps,
-            userId: session.userId,
-            accessToken: session.accessToken
-        )
+            await sync.syncStepHistory(
+                metrics: metrics,
+                userId: session.userId,
+                accessToken: session.accessToken
+            )
+
+            // Mantenim també l'estat publicat
+            // que utilitza la UI del connector.
+            await healthKit.loadTodaySteps()
+
+        } catch {
+            print(
+                "ATLES step background sync failed:",
+                error.localizedDescription
+            )
+        }
     }
 
     private func syncWorkouts() async {

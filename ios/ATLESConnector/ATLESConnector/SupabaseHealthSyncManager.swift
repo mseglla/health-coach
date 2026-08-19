@@ -123,6 +123,155 @@ final class SupabaseHealthSyncManager: ObservableObject {
         }
     }
 
+    func syncStepHistory(
+        metrics: [DailyHealthMetric],
+        userId: String,
+        accessToken: String
+    ) async {
+        isSyncing = true
+        syncMessage = nil
+        errorMessage = nil
+
+        defer {
+            isSyncing = false
+        }
+
+        guard !metrics.isEmpty else {
+            syncMessage =
+                "No hi ha historial de passos per importar."
+            return
+        }
+
+        let path =
+            "/rest/v1/health_daily_metrics" +
+            "?on_conflict=user_id,metric_date,metric_type,source"
+
+        guard let url = URL(
+            string: supabaseURL + path
+        ) else {
+            errorMessage =
+                "URL de sincronització no vàlida."
+            return
+        }
+
+        let dateFormatter = DateFormatter()
+        dateFormatter.calendar =
+            Calendar(identifier: .gregorian)
+        dateFormatter.locale =
+            Locale(identifier: "en_US_POSIX")
+        dateFormatter.timeZone = .current
+        dateFormatter.dateFormat = "yyyy-MM-dd"
+
+        let importedAt =
+            ISO8601DateFormatter().string(
+                from: Date()
+            )
+
+        let payload = metrics.map { metric in
+            HealthDailyMetricPayload(
+                userId: userId,
+                metricDate: dateFormatter.string(
+                    from: metric.date
+                ),
+                metricType: "steps",
+                value: metric.value,
+                unit: "count",
+                source: "healthkit",
+                timezone:
+                    TimeZone.current.identifier,
+                importedAt: importedAt,
+                deletedAt: nil
+            )
+        }
+
+        // Evitem payloads enormes si hi ha molts anys
+        // d'historial.
+        let chunkSize = 250
+        var importedCount = 0
+
+        do {
+            for start in stride(
+                from: 0,
+                to: payload.count,
+                by: chunkSize
+            ) {
+                let end = min(
+                    start + chunkSize,
+                    payload.count
+                )
+
+                let chunk = Array(
+                    payload[start..<end]
+                )
+
+                var request = URLRequest(url: url)
+                request.httpMethod = "POST"
+
+                request.setValue(
+                    publishableKey,
+                    forHTTPHeaderField: "apikey"
+                )
+
+                request.setValue(
+                    "Bearer \(accessToken)",
+                    forHTTPHeaderField:
+                        "Authorization"
+                )
+
+                request.setValue(
+                    "application/json",
+                    forHTTPHeaderField:
+                        "Content-Type"
+                )
+
+                request.setValue(
+                    "resolution=merge-duplicates",
+                    forHTTPHeaderField: "Prefer"
+                )
+
+                request.httpBody =
+                    try JSONEncoder().encode(chunk)
+
+                let (data, response) =
+                    try await URLSession.shared.data(
+                        for: request
+                    )
+
+                guard
+                    let httpResponse =
+                        response as? HTTPURLResponse
+                else {
+                    errorMessage =
+                        "Resposta no vàlida de Supabase."
+                    return
+                }
+
+                guard
+                    (200...299).contains(
+                        httpResponse.statusCode
+                    )
+                else {
+                    let detail = String(
+                        data: data,
+                        encoding: .utf8
+                    ) ?? "Error desconegut"
+
+                    errorMessage =
+                        "Error important historial: \(detail)"
+                    return
+                }
+
+                importedCount += chunk.count
+            }
+
+            syncMessage =
+                "\(importedCount) dies de passos importats a ATLES."
+
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+
     func syncWorkouts(
         workouts: [HKWorkout],
         metricsByWorkout: [UUID: WorkoutMetrics],

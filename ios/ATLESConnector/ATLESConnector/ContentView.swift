@@ -53,6 +53,62 @@ struct ContentView: View {
 
                             Button {
                                 Task {
+                                    do {
+                                        let recent =
+                                            try await healthKit.loadRecentStepHistory(
+                                                days: 7
+                                            )
+
+                                        await sync.syncStepHistory(
+                                            metrics: recent,
+                                            userId: userId,
+                                            accessToken: accessToken
+                                        )
+                                    } catch {
+                                        sync.errorMessage =
+                                            error.localizedDescription
+                                    }
+                                }
+                            } label: {
+                                if sync.isSyncing {
+                                    ProgressView()
+                                } else {
+                                    Text(
+                                        "Refrescar últims 7 dies"
+                                    )
+                                }
+                            }
+                            .disabled(sync.isSyncing)
+
+                            Button {
+                                Task {
+                                    do {
+                                        let history =
+                                            try await healthKit.loadStepHistory()
+
+                                        await sync.syncStepHistory(
+                                            metrics: history,
+                                            userId: userId,
+                                            accessToken: accessToken
+                                        )
+                                    } catch {
+                                        sync.errorMessage =
+                                            error.localizedDescription
+                                    }
+                                }
+                            } label: {
+                                if sync.isSyncing {
+                                    ProgressView()
+                                } else {
+                                    Text(
+                                        "Importar historial de passos"
+                                    )
+                                }
+                            }
+                            .disabled(sync.isSyncing)
+
+                            Button {
+                                Task {
                                     let metrics =
                                         await healthKit.loadWorkoutMetrics(
                                             for: healthKit.workouts

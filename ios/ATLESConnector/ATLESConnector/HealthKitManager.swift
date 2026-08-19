@@ -9,6 +9,11 @@ import Foundation
 import HealthKit
 import Combine
 
+struct DailyHealthMetric {
+    let date: Date
+    let value: Double
+}
+
 struct WorkoutMetrics {
     let averageHeartRateBpm: Double?
     let maxHeartRateBpm: Double?
@@ -219,6 +224,192 @@ final class HealthKitManager: ObservableObject {
             await MainActor.run {
                 authorizationError = error.localizedDescription
             }
+        }
+    }
+
+    func loadRecentStepHistory(
+        days: Int = 7
+    ) async throws -> [DailyHealthMetric] {
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: Date())
+
+        guard let startDate = calendar.date(
+            byAdding: .day,
+            value: -(max(days, 1) - 1),
+            to: today
+        ) else {
+            return []
+        }
+
+        return try await loadStepHistory(
+            from: startDate,
+            to: Date()
+        )
+    }
+
+    func loadStepHistory(
+        from startDate: Date? = nil,
+        to endDate: Date = Date()
+    ) async throws -> [DailyHealthMetric] {
+        guard let stepType = HKQuantityType.quantityType(
+            forIdentifier: .stepCount
+        ) else {
+            return []
+        }
+
+        let effectiveStart: Date
+
+        if let startDate {
+            effectiveStart = Calendar.current.startOfDay(
+                for: startDate
+            )
+        } else {
+            guard let earliestDate =
+                try await earliestSampleDate(
+                    for: stepType
+                )
+            else {
+                return []
+            }
+
+            effectiveStart = Calendar.current.startOfDay(
+                for: earliestDate
+            )
+        }
+
+        let effectiveEnd = min(endDate, Date())
+
+        guard effectiveStart <= effectiveEnd else {
+            return []
+        }
+
+        return try await dailyCumulativeValues(
+            quantityType: stepType,
+            unit: .count(),
+            from: effectiveStart,
+            to: effectiveEnd
+        )
+    }
+
+    private func earliestSampleDate(
+        for sampleType: HKSampleType
+    ) async throws -> Date? {
+        try await withCheckedThrowingContinuation {
+            (
+                continuation:
+                CheckedContinuation<Date?, Error>
+            ) in
+
+            let sort = NSSortDescriptor(
+                key: HKSampleSortIdentifierStartDate,
+                ascending: true
+            )
+
+            let query = HKSampleQuery(
+                sampleType: sampleType,
+                predicate: nil,
+                limit: 1,
+                sortDescriptors: [sort]
+            ) { _, samples, error in
+                if let error {
+                    continuation.resume(
+                        throwing: error
+                    )
+                    return
+                }
+
+                continuation.resume(
+                    returning: samples?.first?.startDate
+                )
+            }
+
+            healthStore.execute(query)
+        }
+    }
+
+    private func dailyCumulativeValues(
+        quantityType: HKQuantityType,
+        unit: HKUnit,
+        from startDate: Date,
+        to endDate: Date
+    ) async throws -> [DailyHealthMetric] {
+        let calendar = Calendar.current
+        let anchorDate = calendar.startOfDay(
+            for: startDate
+        )
+
+        let predicate = HKQuery.predicateForSamples(
+            withStart: startDate,
+            end: endDate,
+            options: .strictStartDate
+        )
+
+        return try await withCheckedThrowingContinuation {
+            (
+                continuation:
+                CheckedContinuation<
+                    [DailyHealthMetric],
+                    Error
+                >
+            ) in
+
+            let query = HKStatisticsCollectionQuery(
+                quantityType: quantityType,
+                quantitySamplePredicate: predicate,
+                options: .cumulativeSum,
+                anchorDate: anchorDate,
+                intervalComponents: DateComponents(
+                    day: 1
+                )
+            )
+
+            query.initialResultsHandler = {
+                _,
+                collection,
+                error in
+
+                if let error {
+                    continuation.resume(
+                        throwing: error
+                    )
+                    return
+                }
+
+                guard let collection else {
+                    continuation.resume(
+                        returning: []
+                    )
+                    return
+                }
+
+                var result: [DailyHealthMetric] = []
+
+                collection.enumerateStatistics(
+                    from: startDate,
+                    to: endDate
+                ) { statistics, _ in
+                    guard let quantity =
+                        statistics.sumQuantity()
+                    else {
+                        return
+                    }
+
+                    result.append(
+                        DailyHealthMetric(
+                            date: statistics.startDate,
+                            value: quantity.doubleValue(
+                                for: unit
+                            ).rounded()
+                        )
+                    )
+                }
+
+                continuation.resume(
+                    returning: result
+                )
+            }
+
+            healthStore.execute(query)
         }
     }
 
