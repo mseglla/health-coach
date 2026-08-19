@@ -35,6 +35,8 @@ function normalizeState(raw) {
     bodyMeasurements: [],
     healthMetrics: [],
     activities: [],
+    checkins: [],
+    checkinPromptDismissed: false,
     days: days.map(({ weight, ...day }) => day),
     weights: migratedWeights
       .filter(item => item && Number.isFinite(Number(item.value)) && item.measuredAt)

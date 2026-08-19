@@ -77,6 +77,24 @@ Registre de pes. Supabase és la font de veritat.
 - timestamps comuns
 - soft delete mitjançant `deleted_at`
 
+### contextual_checkins
+
+Context subjectiu opcional aportat per l'usuari. No és necessari
+perquè ATLES funcioni i l'absència de check-in no implica un dia incomplet.
+
+- `id uuid primary key`
+- `user_id uuid not null`
+- `checkin_date date not null`
+- `feeling_score integer not null` — escala simple d'1 a 5
+- `note text null`
+- `source text not null default 'manual'`
+- timestamps comuns i soft delete
+- unique: `(user_id, checkin_date)`
+
+La primera versió només pregunta com es troba l'usuari i permet una
+nota opcional. La decisió futura de quan proposar el check-in quedarà
+en mans de la capa d'interpretació/IA.
+
 ### daily_summaries
 
 Resum diari introduït o consolidat per ATLES. No s’utilitza com a contenidor genèric de dades automàtiques de HealthKit.

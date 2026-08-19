@@ -10,7 +10,7 @@ Construir un sistema personal de salut i rendiment que integri Apple Watch i App
 
 - **Fase actual:** Fase 2 — Nucli personal de salut
 - **Estat:** en curs
-- **Pròxima fita:** continuar la Fase 2 amb check-in diari
+- **Pròxima fita:** continuar la Fase 2 amb dashboard diari
 - **Branca d’integració:** `develop`
 - **Producció estable:** `main`
 
@@ -144,7 +144,7 @@ Demostrar amb dades reals que el flux `Apple Watch → Apple Health → connecto
 - [x] Pes i mesures.
 - [x] Balanç energètic i nutrició inferida.
 - [x] Activitat i entrenaments.
-- [ ] Check-in diari.
+- [x] Check-in contextual i opcional.
 - [ ] Dashboard diari.
 - [ ] Historial i gràfiques.
 - [ ] Registre ràpid.
@@ -207,6 +207,19 @@ Demostrar amb dades reals que el flux `Apple Watch → Apple Health → connecto
 - Mapatge de `coreTraining` afegit com a `core_training`.
 - Validació funcional real completada amb entrenaments importats de l'Apple Watch.
 - Commit principal: `e7f2cb1`.
+
+### Validació Check-in contextual i opcional 2026-08-19
+
+- Afegida `contextual_checkins` a Supabase com a font de veritat del context subjectiu.
+- El check-in és completament opcional i la seva absència no converteix el dia en incomplet.
+- La primera versió pregunta únicament `Com et trobes avui?` amb una escala simple d'1 a 5.
+- Es pot respondre amb un únic toc.
+- La nota lliure és opcional i queda amagada per defecte.
+- L'usuari pot prémer `Ara no` i continuar utilitzant ATLES normalment.
+- L'omissió només es conserva localment per evitar tornar a mostrar la proposta durant el mateix dia.
+- Una resposta queda persistida a Supabase i no torna a demanar-se aquell dia després de recarregar.
+- Preparat el model perquè en el futur ATLES decideixi contextualment quan val la pena proposar un check-in.
+- Validació funcional real completada en navegador local.
 
 ## Fase 3 — Apple Health complet
 

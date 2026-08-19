@@ -116,3 +116,38 @@
   margin: 0;
   color: var(--text-muted);
 }
+
+
+.checkin-card {
+  display: grid;
+  gap: 1rem;
+}
+
+.checkin-card h2 {
+  margin: 0.2rem 0 0;
+}
+
+.checkin-card__hint {
+  margin: 0.35rem 0 0;
+  color: var(--text-muted);
+}
+
+.checkin-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.checkin-note summary {
+  cursor: pointer;
+  color: var(--text-muted);
+}
+
+.checkin-note .field {
+  margin-top: 0.75rem;
+}
+
+.checkin-note textarea {
+  width: 100%;
+  resize: vertical;
+}

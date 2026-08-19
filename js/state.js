@@ -17,7 +17,9 @@ const defaultState = {
   weights: [],
   bodyMeasurements: [],
   healthMetrics: [],
-  activities: []
+  activities: [],
+  checkins: [],
+  checkinPromptDismissed: false
 };
 
 export function createDefaultState() {

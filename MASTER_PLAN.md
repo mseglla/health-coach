@@ -266,7 +266,7 @@ Integra les recomanacions de tots els especialistes i resol conflictes. Per exem
   - Dèficit, manteniment o superàvit sempre expressats com a estimació amb incertesa.
   - El registre d’àpats queda com a funcionalitat futura i opcional del nutricionista.
 - Activitat i entrenaments.
-- Check-in diari.
+- Check-in contextual i opcional.
 - Dashboard diari.
 - Historial i gràfiques.
 - Registre ràpid.
