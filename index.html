@@ -43,24 +43,34 @@
           </div>
         </section>
 
-        <section class="surface-card energy-status-card" aria-label="Balanç energètic inferit">
-          <div class="energy-status-card__header">
+        <section
+          id="dailyBrief"
+          class="surface-card daily-brief-card"
+          aria-label="Lectura diària d'ATLES"
+        >
+          <div class="daily-brief-card__header">
             <div>
-              <span class="section-kicker">BALANÇ ENERGÈTIC</span>
-              <h2 id="statusPill">APRENENT</h2>
+              <span class="section-kicker">LECTURA D'AVUI</span>
+              <h2 id="dailyHeadline">Construint la teva lectura.</h2>
             </div>
-            <strong id="balanceToday" class="energy-status-card__value">—</strong>
+            <span id="dailyTrajectory" class="chip" hidden></span>
           </div>
-          <p id="orbitCaption" class="energy-status-card__detail">
-            Construint tendència
-          </p>
-        </section>
 
-        <section class="coach-card">
-          <div class="coach-card__icon">✦</div>
-          <div>
-            <p class="coach-card__label">LA MILLOR DECISIÓ ARA</p>
-            <h2 id="recommendation">Construint una lectura personal de la teva evolució.</h2>
+          <p id="dailySummary" class="daily-brief-card__summary">
+            Reunint les dades disponibles.
+          </p>
+
+          <div
+            id="dailyEvidence"
+            class="daily-evidence"
+            aria-label="Evidències principals"
+          ></div>
+
+          <div class="daily-action">
+            <span class="daily-action__label">QUÈ ET CONVÉ FER ARA</span>
+            <strong id="dailyAction">
+              Esperant prou context per donar-te una recomanació.
+            </strong>
           </div>
         </section>
 
@@ -116,7 +126,7 @@
             <small id="energyBalanceDetail">esperant tendència</small>
           </article>
           <article class="metric-card metric-card--burn">
-            <span class="metric-card__label">Gastades</span>
+            <span class="metric-card__label">Passos avui</span>
             <strong id="burnToday">—</strong>
             <small id="burnSourceToday">sense dades</small>
           </article>

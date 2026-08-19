@@ -14,7 +14,8 @@ import {
   weightForDate,
   weightTrend
 } from './calculations.js';
-import { getCoachDecision } from './coach.js';
+import { createDailyInsight } from './daily-insight.js';
+import { createDailySnapshot } from './daily-snapshot.js';
 import { drawChart } from './charts.js';
 
 export const $ = id => document.getElementById(id);
@@ -29,25 +30,6 @@ export function showToast(message) {
 
 export function getTodayRecord(state, date) {
   return state.days.find(day => day.date === date) || { date };
-}
-
-function updateOrbit(state, _day, decision) {
-  const balance = inferEnergyBalance(state);
-
-  if (!balance.available) {
-    $('balanceToday').textContent = '—';
-  } else if (balance.status === 'deficit') {
-    $('balanceToday').textContent =
-      `−${balance.absoluteBalanceKcal} kcal/dia`;
-  } else if (balance.status === 'surplus') {
-    $('balanceToday').textContent =
-      `+${balance.absoluteBalanceKcal} kcal/dia`;
-  } else {
-    $('balanceToday').textContent = '≈ 0 kcal/dia';
-  }
-
-  $('orbitCaption').textContent = decision.caption;
-  $('statusPill').textContent = decision.label;
 }
 
 
@@ -252,6 +234,45 @@ function renderRecentDays(state) {
   }).join('') || '<p class="empty-state">Encara no hi ha registres d’energia.</p>';
 }
 
+function renderDailyBrief(state, snapshot) {
+  const insight = createDailyInsight(
+    state,
+    snapshot
+  );
+
+  $('dailyHeadline').textContent =
+    insight.headline;
+
+  $('dailySummary').textContent =
+    insight.summary;
+
+  $('dailyAction').textContent =
+    insight.action;
+
+  const trajectory = $('dailyTrajectory');
+
+  if (insight.trajectory.status === 'on_track') {
+    trajectory.hidden = false;
+    trajectory.textContent = 'EN TRAJECTÒRIA';
+  } else if (
+    insight.trajectory.status === 'behind'
+  ) {
+    trajectory.hidden = false;
+    trajectory.textContent = 'FORA DE RITME';
+  } else {
+    trajectory.hidden = true;
+    trajectory.textContent = '';
+  }
+
+  $('dailyEvidence').innerHTML =
+    insight.evidence.map(item => `
+      <div class="daily-evidence__item">
+        <span>${item.label}</span>
+        <strong>${item.value}</strong>
+      </div>
+    `).join('');
+}
+
 function renderCheckinPrompt(state, today) {
   const prompt = $('checkinPrompt');
   if (!prompt) return;
@@ -268,15 +289,17 @@ function renderCheckinPrompt(state, today) {
 }
 
 export function renderApp(state, today) {
+  const snapshot = createDailySnapshot(state, today);
   const day = getTodayRecord(state, today);
   const burn = totalBurn(state, day);
   const energyBalance = inferEnergyBalance(state);
-  const todayWeight = weightForDate(state.weights, today);
-  const latest = latestWeightRecord(state.weights);
-  const displayWeight = todayWeight || latest;
-  const avg = averageWeight(state.weights, 7);
-  const trend = weightTrend(state.weights);
-  const decision = getCoachDecision(state, day);
+  const todayWeight =
+    snapshot.weight.measuredToday
+      ? snapshot.weight.record
+      : null;
+  const displayWeight = snapshot.weight.record;
+  const avg = snapshot.weight.average7d;
+  const trend = snapshot.weight.trend7d;
   const goals = Array.isArray(state.goals) ? state.goals : [];
   const primaryGoal =
     goals.find(goal => goal.isPrimary) ||
@@ -312,14 +335,22 @@ export function renderApp(state, today) {
       ? 'esperant tendència'
       : `kcal/dia · ${energyBalance.confidence === 'medium' ? 'confiança mitjana' : 'confiança baixa'}`;
 
-  $('burnToday').textContent = burn ?? '—';
-  $('burnSourceToday').textContent = burn == null ? 'sense dades' : burnSource(day) || 'estimades';
+  $('burnToday').textContent =
+    snapshot.movement.steps != null
+      ? Math.round(snapshot.movement.steps).toLocaleString('ca-ES')
+      : '—';
+
+  $('burnSourceToday').textContent =
+    snapshot.movement.steps != null
+      ? snapshot.movement.stepsSource === 'healthkit'
+        ? 'Apple Health'
+        : snapshot.movement.stepsSource || 'registrats'
+      : 'sense dades';
   $('weightDelta').textContent = displayWeight
     ? todayWeight ? `Avui · ${formatDateTime(todayWeight.measuredAt)}` : `Últim: ${formatDateTime(displayWeight.measuredAt)}`
     : 'Sense registres';
   $('weightTrend').textContent = trend == null ? 'Esperant dades' : trend < -0.1 ? 'Tendència positiva' : trend > 0.1 ? 'Tendència a l’alça' : 'Tendència estable';
-  $('recommendation').textContent = decision.title;
-  updateOrbit(state, day, decision);
+  renderDailyBrief(state, snapshot);
 
   $('stepsInput').value = day.steps ?? '';
   $('activeInput').value = day.active ?? '';

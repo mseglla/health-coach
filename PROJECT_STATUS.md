@@ -10,7 +10,7 @@ Construir un sistema personal de salut i rendiment que integri Apple Watch i App
 
 - **Fase actual:** Fase 2 — Nucli personal de salut
 - **Estat:** en curs
-- **Pròxima fita:** continuar la Fase 2 amb dashboard diari
+- **Pròxima fita:** continuar la Fase 2 amb historial i gràfiques
 - **Branca d’integració:** `develop`
 - **Producció estable:** `main`
 
@@ -145,7 +145,7 @@ Demostrar amb dades reals que el flux `Apple Watch → Apple Health → connecto
 - [x] Balanç energètic i nutrició inferida.
 - [x] Activitat i entrenaments.
 - [x] Check-in contextual i opcional.
-- [ ] Dashboard diari.
+- [x] Dashboard diari — snapshot unificat de l'estat del dia.
 - [ ] Historial i gràfiques.
 - [ ] Registre ràpid.
 
@@ -219,6 +219,22 @@ Demostrar amb dades reals que el flux `Apple Watch → Apple Health → connecto
 - L'omissió només es conserva localment per evitar tornar a mostrar la proposta durant el mateix dia.
 - Una resposta queda persistida a Supabase i no torna a demanar-se aquell dia després de recarregar.
 - Preparat el model perquè en el futur ATLES decideixi contextualment quan val la pena proposar un check-in.
+- Validació funcional real completada en navegador local.
+
+### Validació Dashboard diari 2026-08-19
+
+- Creat `dailySnapshot` com a capa única de lectura de l'estat del dia.
+- El snapshot integra pes, tendència, balanç energètic inferit, passos, check-in i entrenaments.
+- Els passos d'Apple Health es consumeixen directament des de `health_daily_metrics`.
+- Creada una capa `dailyInsight` separada de la UI per interpretar el snapshot.
+- La Home prioritza una conclusió principal abans de mostrar mètriques.
+- La lectura diària diferencia entre tendència energètica i trajectòria respecte a l'objectiu.
+- El sistema pot identificar quan el pes baixa però a un ritme inferior al necessari per arribar a l'objectiu en la data marcada.
+- La lectura mostra un màxim de tres evidències principals.
+- Afegida una única recomanació contextual sota `Què et convé fer ara`.
+- El check-in subjectiu pot modificar la recomanació quan l'usuari declara cansament.
+- Eliminada la duplicació entre la targeta de balanç energètic i la recomanació principal.
+- La lògica d'interpretació queda desacoblada de la presentació i preparada per a futures capes d'analítica i IA.
 - Validació funcional real completada en navegador local.
 
 ## Fase 3 — Apple Health complet
