@@ -10,7 +10,7 @@ Construir un sistema personal de salut i rendiment que integri Apple Watch i App
 
 - **Fase actual:** Fase 2 — Nucli personal de salut
 - **Estat:** en curs
-- **Pròxima fita:** continuar la Fase 2 amb historial i gràfiques
+- **Pròxima fita:** continuar la Fase 2 amb registre ràpid
 - **Branca d’integració:** `develop`
 - **Producció estable:** `main`
 
@@ -146,7 +146,7 @@ Demostrar amb dades reals que el flux `Apple Watch → Apple Health → connecto
 - [x] Activitat i entrenaments.
 - [x] Check-in contextual i opcional.
 - [x] Dashboard diari — snapshot unificat de l'estat del dia.
-- [ ] Historial i gràfiques.
+- [x] Historial i gràfiques.
 - [ ] Registre ràpid.
 
 ### Validació Perfil i objectius 2026-08-18
@@ -235,6 +235,22 @@ Demostrar amb dades reals que el flux `Apple Watch → Apple Health → connecto
 - El check-in subjectiu pot modificar la recomanació quan l'usuari declara cansament.
 - Eliminada la duplicació entre la targeta de balanç energètic i la recomanació principal.
 - La lògica d'interpretació queda desacoblada de la presentació i preparada per a futures capes d'analítica i IA.
+- Validació funcional real completada en navegador local.
+
+### Validació Historial i gràfiques 2026-08-19
+
+- Pantalla `Progrés` reorganitzada entorn de preguntes útils i no de mètriques decoratives.
+- Afegit resum de pes, passos i càrrega d'entrenament.
+- Pes: historial de fins a 30 registres amb dates reals a l'eix X.
+- Pes puntual separat visualment de la tendència suavitzada.
+- Afegida trajectòria objectiu discontínua basada en el pes inicial de l'objectiu i la data objectiu.
+- La desviació respecte a la trajectòria es quantifica en kg.
+- La lectura de ritme diferencia entre ritme observat i ritme necessari per arribar a l'objectiu.
+- La tendència de pes utilitzada per interpretar progrés evita donar massa pes a una mesura puntual.
+- Passos: mitjana dels dies realment disponibles i cobertura explícita del període.
+- Els dies sense dades no s'interpreten com a zeros ni com a continuïtat observada.
+- Entrenament: sessions i minuts agregats per les últimes 4 setmanes.
+- Els eixos de mètriques no negatives, com passos i minuts d'entrenament, no baixen de zero.
 - Validació funcional real completada en navegador local.
 
 ## Fase 3 — Apple Health complet

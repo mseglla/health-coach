@@ -17,6 +17,7 @@ import {
 import { createDailyInsight } from './daily-insight.js';
 import { createDailySnapshot } from './daily-snapshot.js';
 import { drawChart } from './charts.js';
+import { createHistorySummary } from './history-summary.js';
 
 export const $ = id => document.getElementById(id);
 
@@ -372,10 +373,134 @@ export function renderApp(state, today) {
 }
 
 export function renderCharts(state) {
-  const weightSeries = dailyWeightSeries(state.weights).slice(-30);
-  const days = state.days.slice(-30);
-  drawChart($('weightChart'), weightSeries.map(record => record.value));
-  drawChart($('calorieChart'), days.map(day => totalIntake(state, day)), days.map(day => totalBurn(state, day)));
+  const history = createHistorySummary(state);
+
+  drawChart(
+    $('weightChart'),
+    history.weight.trendValues,
+    history.weight.trajectoryValues,
+    {
+      labels: history.weight.labels,
+      points: history.weight.values
+    }
+  );
+
+  drawChart(
+    $('stepsChart'),
+    history.steps.values,
+    null,
+    {
+      labels: history.steps.labels,
+      zeroFloor: true
+    }
+  );
+
+  drawChart(
+    $('trainingChart'),
+    history.training.minutesByWeek,
+    null,
+    {
+      labels: history.training.labels,
+      zeroFloor: true
+    }
+  );
+
+  const weightChange =
+    history.weight.start != null &&
+    history.weight.end != null
+      ? history.weight.end -
+        history.weight.start
+      : null;
+
+  $('historyWeightChange').textContent =
+    weightChange == null
+      ? '—'
+      : `${weightChange > 0 ? '+' : ''}${weightChange
+          .toFixed(1)
+          .replace('.', ',')} kg`;
+
+  const deviation =
+    history.weight.trajectoryDeviation;
+
+  const observedRate =
+    history.weight.observedWeeklyRate;
+
+  const requiredRate =
+    history.weight.requiredWeeklyRate;
+
+  let trajectoryText;
+
+  if (deviation == null) {
+    trajectoryText =
+      history.weight.records.length >= 2
+        ? `${history.weight.records.length} registres analitzats`
+        : 'Calen més registres';
+  } else if (Math.abs(deviation) < 0.1) {
+    trajectoryText =
+      'pràcticament sobre la trajectòria objectiu';
+  } else if (deviation > 0) {
+    trajectoryText =
+      `${deviation
+        .toFixed(1)
+        .replace('.', ',')} kg per sobre de la trajectòria`;
+  } else {
+    trajectoryText =
+      `${Math.abs(deviation)
+        .toFixed(1)
+        .replace('.', ',')} kg per davant de la trajectòria`;
+  }
+
+  const formatWeeklyRate = value => {
+    if (value == null) return null;
+
+    const sign =
+      value > 0 ? '+' : value < 0 ? '−' : '';
+
+    return `${sign}${Math.abs(value)
+      .toFixed(2)
+      .replace('.', ',')} kg/setm.`;
+  };
+
+  const rateParts = [];
+
+  if (observedRate != null) {
+    rateParts.push(
+      `observat ${formatWeeklyRate(observedRate)}`
+    );
+  }
+
+  if (requiredRate != null) {
+    rateParts.push(
+      `necessari ${formatWeeklyRate(requiredRate)}`
+    );
+  }
+
+  $('historyWeightDetail').textContent =
+    rateParts.length
+      ? `${trajectoryText} · ${rateParts.join(' · ')}`
+      : trajectoryText;
+
+  $('historyStepsAverage').textContent =
+    history.steps.average == null
+      ? '—'
+      : Math.round(
+          history.steps.average
+        ).toLocaleString('ca-ES');
+
+  $('historyStepsCoverage').textContent =
+    history.steps.coverage
+      ? `mitjana dels ${history.steps.coverage} dies amb dades · cobertura ${history.steps.coverage}/14`
+      : 'Encara no hi ha dades automàtiques';
+
+  $('historyTrainingTotal').textContent =
+    history.training.totalSessions
+      ? `${history.training.totalSessions} sessions`
+      : '—';
+
+  $('historyTrainingDetail').textContent =
+    history.training.totalSessions
+      ? `${Math.round(history.training.totalMinutes)} min en 4 setmanes`
+      : 'Sense entrenaments en el període';
 }
 
 export function openScreen(screenId) {
