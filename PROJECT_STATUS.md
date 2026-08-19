@@ -10,7 +10,7 @@ Construir un sistema personal de salut i rendiment que integri Apple Watch i App
 
 - **Fase actual:** Fase 2 — Nucli personal de salut
 - **Estat:** en curs
-- **Pròxima fita:** continuar la Fase 2 amb registre ràpid
+- **Pròxima fita:** començar la Fase 3 amb Apple Health complet
 - **Branca d’integració:** `develop`
 - **Producció estable:** `main`
 
@@ -147,7 +147,7 @@ Demostrar amb dades reals que el flux `Apple Watch → Apple Health → connecto
 - [x] Check-in contextual i opcional.
 - [x] Dashboard diari — snapshot unificat de l'estat del dia.
 - [x] Historial i gràfiques.
-- [ ] Registre ràpid.
+- [x] Registre ràpid — entrada manual mínima i sota demanda.
 
 ### Validació Perfil i objectius 2026-08-18
 
@@ -252,6 +252,29 @@ Demostrar amb dades reals que el flux `Apple Watch → Apple Health → connecto
 - Entrenament: sessions i minuts agregats per les últimes 4 setmanes.
 - Els eixos de mètriques no negatives, com passos i minuts d'entrenament, no baixen de zero.
 - Validació funcional real completada en navegador local.
+
+### Validació Registre ràpid 2026-08-19
+
+- La pantalla de registre prioritza només les dades manuals necessàries.
+- Pes i cintura són registres manuals per disseny.
+- Pes i cintura es presenten com accions ràpides sota demanda.
+- Els formularis no ocupen la pantalla per defecte.
+- Guardar una mesura torna a deixar la pantalla neta.
+- Editar registres existents continua obrint el formulari correcte.
+- Passos, calories i entrenaments es prioritzen com a dades automàtiques.
+- El registre manual d'activitat queda disponible com a acció secundària.
+- Validació funcional real completada en navegador local.
+
+### Tancament Fase 2
+
+- Perfil i objectius completats.
+- Pes i mesures completats.
+- Balanç energètic i nutrició inferida completats.
+- Activitat i entrenaments completats.
+- Check-in contextual i opcional completat.
+- Dashboard diari completat.
+- Historial i gràfiques completats.
+- Registre ràpid completat.
 
 ## Fase 3 — Apple Health complet
 
