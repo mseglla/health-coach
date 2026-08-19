@@ -280,16 +280,67 @@
           <div>
             <p class="eyebrow">PROGRÉS</p>
             <h1 id="stats-title">Evolució</h1>
-            <p class="screen-subtitle">Menys soroll, més tendència.</p>
+            <p class="screen-subtitle">
+              Tendències que expliquen si estàs avançant.
+            </p>
           </div>
         </header>
+
+        <section class="progress-summary-grid">
+          <article class="surface-card progress-summary-card">
+            <span class="section-kicker">PES · 30 DIES</span>
+            <strong id="historyWeightChange">—</strong>
+            <small id="historyWeightDetail">Esperant dades</small>
+          </article>
+
+          <article class="surface-card progress-summary-card">
+            <span class="section-kicker">PASSOS · 14 DIES</span>
+            <strong id="historyStepsAverage">—</strong>
+            <small id="historyStepsCoverage">Esperant Apple Health</small>
+          </article>
+
+          <article class="surface-card progress-summary-card">
+            <span class="section-kicker">ENTRENAMENT · 4 SETMANES</span>
+            <strong id="historyTrainingTotal">—</strong>
+            <small id="historyTrainingDetail">Sense entrenaments</small>
+          </article>
+        </section>
+
         <section class="surface-card chart-card">
-          <div class="section-title-row"><h2>Pes</h2><span class="chip">30 registres</span></div>
+          <div class="section-title-row">
+            <div>
+              <span class="section-kicker">TENDÈNCIA</span>
+              <h2>Pes</h2>
+            </div>
+            <span class="chart-legend">
+              <i></i>Tendència
+              <b></b>Trajectòria objectiu
+              <span class="chart-legend__point"></span>Pes diari
+            </span>
+          </div>
           <canvas id="weightChart" width="720" height="300"></canvas>
         </section>
+
         <section class="surface-card chart-card">
-          <div class="section-title-row"><h2>Energia</h2><span class="chart-legend"><i></i>Ingerides <b></b>Gastades</span></div>
-          <canvas id="calorieChart" width="720" height="300"></canvas>
+          <div class="section-title-row">
+            <div>
+              <span class="section-kicker">MOVIMENT</span>
+              <h2>Passos</h2>
+            </div>
+            <span class="chip">14 dies</span>
+          </div>
+          <canvas id="stepsChart" width="720" height="300"></canvas>
+        </section>
+
+        <section class="surface-card chart-card">
+          <div class="section-title-row">
+            <div>
+              <span class="section-kicker">CÀRREGA REALITZADA</span>
+              <h2>Temps d'entrenament</h2>
+            </div>
+            <span class="chip">4 setmanes</span>
+          </div>
+          <canvas id="trainingChart" width="720" height="300"></canvas>
         </section>
       </section>
 
