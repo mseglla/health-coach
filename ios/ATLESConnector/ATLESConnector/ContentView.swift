@@ -109,6 +109,62 @@ struct ContentView: View {
 
                             Button {
                                 Task {
+                                    do {
+                                        let recent =
+                                            try await healthKit.loadRecentDailyHistory(
+                                                days: 7
+                                            )
+
+                                        await sync.syncDailyMetrics(
+                                            metrics: recent,
+                                            userId: userId,
+                                            accessToken: accessToken
+                                        )
+                                    } catch {
+                                        sync.errorMessage =
+                                            error.localizedDescription
+                                    }
+                                }
+                            } label: {
+                                if sync.isSyncing {
+                                    ProgressView()
+                                } else {
+                                    Text(
+                                        "Refrescar totes les mètriques · 7 dies"
+                                    )
+                                }
+                            }
+                            .disabled(sync.isSyncing)
+
+                            Button {
+                                Task {
+                                    do {
+                                        let history =
+                                            try await healthKit.loadDailyHistory()
+
+                                        await sync.syncDailyMetrics(
+                                            metrics: history,
+                                            userId: userId,
+                                            accessToken: accessToken
+                                        )
+                                    } catch {
+                                        sync.errorMessage =
+                                            error.localizedDescription
+                                    }
+                                }
+                            } label: {
+                                if sync.isSyncing {
+                                    ProgressView()
+                                } else {
+                                    Text(
+                                        "Importar historial diari complet"
+                                    )
+                                }
+                            }
+                            .disabled(sync.isSyncing)
+
+                            Button {
+                                Task {
                                     let metrics =
                                         await healthKit.loadWorkoutMetrics(
                                             for: healthKit.workouts

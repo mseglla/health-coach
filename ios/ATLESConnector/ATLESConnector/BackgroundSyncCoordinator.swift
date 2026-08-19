@@ -43,11 +43,12 @@ final class BackgroundSyncCoordinator {
 
         do {
             let metrics =
-                try await healthKit.loadRecentStepHistory(
-                    days: 7
+                try await healthKit.loadRecentDailyHistory(
+                    days: 7,
+                    baselineDays: 30
                 )
 
-            await sync.syncStepHistory(
+            await sync.syncDailyMetrics(
                 metrics: metrics,
                 userId: session.userId,
                 accessToken: session.accessToken
@@ -59,7 +60,7 @@ final class BackgroundSyncCoordinator {
 
         } catch {
             print(
-                "ATLES step background sync failed:",
+                "ATLES daily background sync failed:",
                 error.localizedDescription
             )
         }

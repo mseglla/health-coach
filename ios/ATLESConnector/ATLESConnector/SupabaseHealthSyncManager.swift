@@ -128,6 +128,18 @@ final class SupabaseHealthSyncManager: ObservableObject {
         userId: String,
         accessToken: String
     ) async {
+        await syncDailyMetrics(
+            metrics: metrics,
+            userId: userId,
+            accessToken: accessToken
+        )
+    }
+
+    func syncDailyMetrics(
+        metrics: [DailyHealthMetric],
+        userId: String,
+        accessToken: String
+    ) async {
         isSyncing = true
         syncMessage = nil
         errorMessage = nil
@@ -138,7 +150,7 @@ final class SupabaseHealthSyncManager: ObservableObject {
 
         guard !metrics.isEmpty else {
             syncMessage =
-                "No hi ha historial de passos per importar."
+                "No hi ha mètriques per sincronitzar."
             return
         }
 
@@ -173,9 +185,9 @@ final class SupabaseHealthSyncManager: ObservableObject {
                 metricDate: dateFormatter.string(
                     from: metric.date
                 ),
-                metricType: "steps",
+                metricType: metric.metricType,
                 value: metric.value,
-                unit: "count",
+                unit: metric.unit,
                 source: "healthkit",
                 timezone:
                     TimeZone.current.identifier,
@@ -184,8 +196,6 @@ final class SupabaseHealthSyncManager: ObservableObject {
             )
         }
 
-        // Evitem payloads enormes si hi ha molts anys
-        // d'historial.
         let chunkSize = 250
         var importedCount = 0
 
@@ -257,18 +267,23 @@ final class SupabaseHealthSyncManager: ObservableObject {
                     ) ?? "Error desconegut"
 
                     errorMessage =
-                        "Error important historial: \(detail)"
+                        "Error important mètriques: \(detail)"
                     return
                 }
 
                 importedCount += chunk.count
             }
 
+            let types = Set(
+                metrics.map(\.metricType)
+            ).count
+
             syncMessage =
-                "\(importedCount) dies de passos importats a ATLES."
+                "\(importedCount) mètriques de \(types) tipus sincronitzades."
 
         } catch {
-            errorMessage = error.localizedDescription
+            errorMessage =
+                error.localizedDescription
         }
     }
 
