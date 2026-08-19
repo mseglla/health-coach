@@ -10,7 +10,7 @@ Construir un sistema personal de salut i rendiment que integri Apple Watch i App
 
 - **Fase actual:** Fase 2 — Nucli personal de salut
 - **Estat:** en curs
-- **Pròxima fita:** continuar la Fase 2 amb activitat i entrenaments manuals
+- **Pròxima fita:** continuar la Fase 2 amb activitat i entrenaments
 - **Branca d’integració:** `develop`
 - **Producció estable:** `main`
 
@@ -143,7 +143,7 @@ Demostrar amb dades reals que el flux `Apple Watch → Apple Health → connecto
 - [x] Perfil i objectius.
 - [x] Pes i mesures.
 - [x] Balanç energètic i nutrició inferida.
-- [ ] Activitat i entrenaments manuals.
+- [ ] Activitat i entrenaments.
 - [ ] Check-in diari.
 - [ ] Dashboard diari.
 - [ ] Historial i gràfiques.

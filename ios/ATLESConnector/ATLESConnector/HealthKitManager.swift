@@ -9,6 +9,35 @@ import Foundation
 import HealthKit
 import Combine
 
+struct WorkoutMetrics {
+    let averageHeartRateBpm: Double?
+    let maxHeartRateBpm: Double?
+    let averagePowerWatts: Double?
+    let maxPowerWatts: Double?
+
+    var metadata: [String: Double] {
+        var result: [String: Double] = [:]
+
+        if let averageHeartRateBpm {
+            result["heart_rate_avg_bpm"] = averageHeartRateBpm
+        }
+
+        if let maxHeartRateBpm {
+            result["heart_rate_max_bpm"] = maxHeartRateBpm
+        }
+
+        if let averagePowerWatts {
+            result["power_avg_watts"] = averagePowerWatts
+        }
+
+        if let maxPowerWatts {
+            result["power_max_watts"] = maxPowerWatts
+        }
+
+        return result
+    }
+}
+
 final class HealthKitManager: ObservableObject {
     private let healthStore = HKHealthStore()
 
@@ -26,6 +55,18 @@ final class HealthKitManager: ObservableObject {
         }
 
         types.insert(HKObjectType.workoutType())
+
+        [
+            HKQuantityTypeIdentifier.heartRate,
+            HKQuantityTypeIdentifier.runningPower,
+            HKQuantityTypeIdentifier.cyclingPower
+        ].forEach { identifier in
+            if let type = HKObjectType.quantityType(
+                forIdentifier: identifier
+            ) {
+                types.insert(type)
+            }
+        }
 
         return types
     }
@@ -178,6 +219,128 @@ final class HealthKitManager: ObservableObject {
             await MainActor.run {
                 authorizationError = error.localizedDescription
             }
+        }
+    }
+
+    func loadWorkoutMetrics(
+        for workouts: [HKWorkout]
+    ) async -> [UUID: WorkoutMetrics] {
+        var result: [UUID: WorkoutMetrics] = [:]
+
+        for workout in workouts {
+            result[workout.uuid] = await loadWorkoutMetrics(
+                for: workout
+            )
+        }
+
+        return result
+    }
+
+    private func loadWorkoutMetrics(
+        for workout: HKWorkout
+    ) async -> WorkoutMetrics {
+        let heartRate = await quantityStatistics(
+            identifier: .heartRate,
+            unit: HKUnit.count().unitDivided(
+                by: HKUnit.minute()
+            ),
+            workout: workout
+        )
+
+        let powerIdentifier: HKQuantityTypeIdentifier?
+
+        switch workout.workoutActivityType {
+        case .running:
+            powerIdentifier = .runningPower
+        case .cycling:
+            powerIdentifier = .cyclingPower
+        default:
+            powerIdentifier = nil
+        }
+
+        let power: (
+            average: Double?,
+            maximum: Double?
+        )
+
+        if let powerIdentifier {
+            power = await quantityStatistics(
+                identifier: powerIdentifier,
+                unit: HKUnit.watt(),
+                workout: workout
+            )
+        } else {
+            power = (nil, nil)
+        }
+
+        return WorkoutMetrics(
+            averageHeartRateBpm: heartRate.average,
+            maxHeartRateBpm: heartRate.maximum,
+            averagePowerWatts: power.average,
+            maxPowerWatts: power.maximum
+        )
+    }
+
+    private func quantityStatistics(
+        identifier: HKQuantityTypeIdentifier,
+        unit: HKUnit,
+        workout: HKWorkout
+    ) async -> (
+        average: Double?,
+        maximum: Double?
+    ) {
+        guard let quantityType = HKQuantityType.quantityType(
+            forIdentifier: identifier
+        ) else {
+            return (nil, nil)
+        }
+
+        let predicate = HKQuery.predicateForObjects(
+            from: workout
+        )
+
+        return await withCheckedContinuation {
+            (
+                continuation:
+                CheckedContinuation<
+                    (
+                        average: Double?,
+                        maximum: Double?
+                    ),
+                    Never
+                >
+            ) in
+
+            let query = HKStatisticsQuery(
+                quantityType: quantityType,
+                quantitySamplePredicate: predicate,
+                options: [
+                    .discreteAverage,
+                    .discreteMax
+                ]
+            ) { _, statistics, error in
+
+                guard error == nil else {
+                    continuation.resume(
+                        returning: (nil, nil)
+                    )
+                    return
+                }
+
+                let average = statistics?
+                    .averageQuantity()?
+                    .doubleValue(for: unit)
+
+                let maximum = statistics?
+                    .maximumQuantity()?
+                    .doubleValue(for: unit)
+
+                continuation.resume(
+                    returning: (average, maximum)
+                )
+            }
+
+            healthStore.execute(query)
         }
     }
 

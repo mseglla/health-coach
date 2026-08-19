@@ -53,8 +53,14 @@ struct ContentView: View {
 
                             Button {
                                 Task {
+                                    let metrics =
+                                        await healthKit.loadWorkoutMetrics(
+                                            for: healthKit.workouts
+                                        )
+
                                     await sync.syncWorkouts(
                                         workouts: healthKit.workouts,
+                                        metricsByWorkout: metrics,
                                         userId: userId,
                                         accessToken: accessToken
                                     )

@@ -5,6 +5,7 @@ import { WeightRepository } from './weight-repository.js';
 import { SupabaseWeightRepository } from './supabase-weight-repository.js';
 import { SupabaseDailySummaryRepository } from './supabase-daily-summary-repository.js';
 import { SupabaseHealthMetricsRepository } from './supabase-health-metrics-repository.js';
+import { SupabaseActivityRepository } from './supabase-activity-repository.js';
 import { SupabaseProfileRepository } from './supabase-profile-repository.js';
 import { SupabaseGoalRepository } from './supabase-goal-repository.js';
 import { SupabaseBodyMeasurementRepository } from './supabase-body-measurement-repository.js';
@@ -26,6 +27,9 @@ const remoteDailySummaryRepository = new SupabaseDailySummaryRepository({
   clientFactory: () => authService.getClient()
 });
 const remoteHealthMetricsRepository = new SupabaseHealthMetricsRepository({
+  clientFactory: () => authService.getClient()
+});
+const remoteActivityRepository = new SupabaseActivityRepository({
   clientFactory: () => authService.getClient()
 });
 const remoteProfileRepository = new SupabaseProfileRepository({
@@ -68,6 +72,7 @@ async function handleSessionChange(session) {
     state.bodyMeasurements = [];
     state.days = [];
     state.healthMetrics = [];
+    state.activities = [];
     resetWeightForm();
     renderState();
     return;
@@ -84,7 +89,8 @@ async function handleSessionChange(session) {
       weights: [],
       bodyMeasurements: [],
       days: [],
-      healthMetrics: []
+      healthMetrics: [],
+      activities: []
     };
 
     await Promise.all([
@@ -93,7 +99,8 @@ async function handleSessionChange(session) {
       remoteWeightRepository.initialize(remoteState, { userId }),
       remoteBodyMeasurementRepository.initialize(remoteState, { userId }),
       remoteDailySummaryRepository.initialize(remoteState, { userId }),
-      remoteHealthMetricsRepository.initialize(remoteState, { userId })
+      remoteHealthMetricsRepository.initialize(remoteState, { userId }),
+      remoteActivityRepository.initialize(remoteState, { userId })
     ]);
 
     state.profile = remoteState.profile;
@@ -113,6 +120,7 @@ async function handleSessionChange(session) {
     state.bodyMeasurements = remoteState.bodyMeasurements;
     state.days = remoteState.days;
     state.healthMetrics = remoteState.healthMetrics;
+    state.activities = remoteState.activities;
 
     const legacyTargetWeight = parseNumber(state.settings.goal);
     const hasRemoteWeightGoal = state.goals.some(
@@ -152,6 +160,8 @@ async function handleSessionChange(session) {
     state.weights = [];
     state.bodyMeasurements = [];
     state.days = [];
+    state.healthMetrics = [];
+    state.activities = [];
     resetWeightForm();
     resetWaistForm();
     renderState();

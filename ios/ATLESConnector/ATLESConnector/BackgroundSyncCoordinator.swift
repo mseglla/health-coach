@@ -57,8 +57,13 @@ final class BackgroundSyncCoordinator {
 
         await healthKit.loadRecentWorkouts()
 
+        let metrics = await healthKit.loadWorkoutMetrics(
+            for: healthKit.workouts
+        )
+
         await sync.syncWorkouts(
             workouts: healthKit.workouts,
+            metricsByWorkout: metrics,
             userId: session.userId,
             accessToken: session.accessToken
         )

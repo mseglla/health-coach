@@ -125,6 +125,7 @@ final class SupabaseHealthSyncManager: ObservableObject {
 
     func syncWorkouts(
         workouts: [HKWorkout],
+        metricsByWorkout: [UUID: WorkoutMetrics],
         userId: String,
         accessToken: String
     ) async {
@@ -153,20 +154,30 @@ final class SupabaseHealthSyncManager: ObservableObject {
         let isoFormatter = ISO8601DateFormatter()
 
         let payload = workouts.map { workout in
-            ActivityLogPayload(
+            let metrics = metricsByWorkout[workout.uuid]
+
+            return ActivityLogPayload(
                 userId: userId,
                 activityType: activityTypeName(workout),
                 startedAt: isoFormatter.string(from: workout.startDate),
                 endedAt: isoFormatter.string(from: workout.endDate),
                 durationMinutes: workout.duration / 60,
-                activeCalories: workout.totalEnergyBurned?
-                    .doubleValue(for: .kilocalorie()),
+                activeCalories:
+                    HKQuantityType.quantityType(
+                        forIdentifier: .activeEnergyBurned
+                    )
+                    .flatMap { workout.statistics(for: $0) }
+                    .flatMap { $0.sumQuantity() }
+                    .map { $0.doubleValue(for: .kilocalorie()) },
+                distanceMeters: workout.totalDistance?
+                    .doubleValue(for: .meter()),
                 source: "healthkit",
                 externalId: workout.uuid.uuidString,
                 sourceBundleId:
                     workout.sourceRevision.source.bundleIdentifier,
                 sourceDevice: workout.device?.name,
                 timezone: TimeZone.current.identifier,
+                metadata: metrics?.metadata ?? [:],
                 importedAt: isoFormatter.string(from: Date()),
                 deletedAt: nil
             )
@@ -234,10 +245,36 @@ final class SupabaseHealthSyncManager: ObservableObject {
             return "walking"
         case .cycling:
             return "cycling"
+        case .coreTraining:
+            return "core_training"
         case .traditionalStrengthTraining:
             return "strength_training"
         case .functionalStrengthTraining:
             return "functional_strength_training"
+        case .highIntensityIntervalTraining:
+            return "hiit"
+        case .swimming:
+            return "swimming"
+        case .hiking:
+            return "hiking"
+        case .yoga:
+            return "yoga"
+        case .pilates:
+            return "pilates"
+        case .rowing:
+            return "rowing"
+        case .elliptical:
+            return "elliptical"
+        case .stairClimbing:
+            return "stair_climbing"
+        case .dance:
+            return "dance"
+        case .soccer:
+            return "soccer"
+        case .tennis:
+            return "tennis"
+        case .paddleSports:
+            return "paddle_sports"
         default:
             return "workout_\(workout.workoutActivityType.rawValue)"
         }
@@ -251,11 +288,13 @@ private struct ActivityLogPayload: Encodable {
     let endedAt: String
     let durationMinutes: Double
     let activeCalories: Double?
+    let distanceMeters: Double?
     let source: String
     let externalId: String
     let sourceBundleId: String
     let sourceDevice: String?
     let timezone: String
+    let metadata: [String: Double]
     let importedAt: String
     let deletedAt: String?
 
@@ -266,13 +305,77 @@ private struct ActivityLogPayload: Encodable {
         case endedAt = "ended_at"
         case durationMinutes = "duration_minutes"
         case activeCalories = "active_calories"
+        case distanceMeters = "distance_meters"
         case source
         case externalId = "external_id"
         case sourceBundleId = "source_bundle_id"
         case sourceDevice = "source_device"
         case timezone
+        case metadata
         case importedAt = "imported_at"
         case deletedAt = "deleted_at"
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(
+            keyedBy: CodingKeys.self
+        )
+
+        try container.encode(userId, forKey: .userId)
+        try container.encode(activityType, forKey: .activityType)
+        try container.encode(startedAt, forKey: .startedAt)
+        try container.encode(endedAt, forKey: .endedAt)
+        try container.encode(
+            durationMinutes,
+            forKey: .durationMinutes
+        )
+
+        if let activeCalories {
+            try container.encode(
+                activeCalories,
+                forKey: .activeCalories
+            )
+        } else {
+            try container.encodeNil(forKey: .activeCalories)
+        }
+
+        if let distanceMeters {
+            try container.encode(
+                distanceMeters,
+                forKey: .distanceMeters
+            )
+        } else {
+            try container.encodeNil(forKey: .distanceMeters)
+        }
+
+        try container.encode(source, forKey: .source)
+        try container.encode(externalId, forKey: .externalId)
+        try container.encode(
+            sourceBundleId,
+            forKey: .sourceBundleId
+        )
+
+        if let sourceDevice {
+            try container.encode(
+                sourceDevice,
+                forKey: .sourceDevice
+            )
+        } else {
+            try container.encodeNil(forKey: .sourceDevice)
+        }
+
+        try container.encode(timezone, forKey: .timezone)
+        try container.encode(metadata, forKey: .metadata)
+        try container.encode(importedAt, forKey: .importedAt)
+
+        if let deletedAt {
+            try container.encode(
+                deletedAt,
+                forKey: .deletedAt
+            )
+        } else {
+            try container.encodeNil(forKey: .deletedAt)
+        }
     }
 }
 
