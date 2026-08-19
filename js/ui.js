@@ -110,6 +110,136 @@ function renderWaistHistory(state) {
     '<p class="empty-state">Encara no hi ha mesures de cintura.</p>';
 }
 
+function activityLabel(type) {
+  const labels = {
+    running: 'Running',
+    walking: 'Caminar',
+    cycling: 'Ciclisme',
+    core_training: 'Core',
+    strength_training: 'Força',
+    functional_strength_training: 'Força funcional',
+    hiit: 'HIIT',
+    swimming: 'Natació',
+    hiking: 'Senderisme',
+    yoga: 'Ioga',
+    pilates: 'Pilates',
+    rowing: 'Rem',
+    elliptical: 'El·líptica',
+    stair_climbing: 'Escales',
+    dance: 'Dansa',
+    soccer: 'Futbol',
+    tennis: 'Tennis',
+    paddle_sports: 'Pàdel / pala'
+  };
+
+  if (labels[type]) return labels[type];
+
+  if (String(type || '').startsWith('workout_')) {
+    return 'Entrenament';
+  }
+
+  return String(type || 'Entrenament')
+    .replaceAll('_', ' ')
+    .replace(/\b\w/g, letter => letter.toUpperCase());
+}
+
+
+function formatDuration(minutes) {
+  if (minutes == null) return null;
+
+  const rounded = Math.round(minutes);
+
+  if (rounded < 60) return `${rounded} min`;
+
+  const hours = Math.floor(rounded / 60);
+  const rest = rounded % 60;
+
+  return rest
+    ? `${hours} h ${rest} min`
+    : `${hours} h`;
+}
+
+function formatDistance(meters) {
+  if (meters == null) return null;
+
+  if (meters >= 1000) {
+    return `${(meters / 1000)
+      .toFixed(2)
+      .replace('.', ',')} km`;
+  }
+
+  return `${Math.round(meters)} m`;
+}
+
+function renderActivities(state) {
+  const container = $('activityHistory');
+  if (!container) return;
+
+  const activities = (state.activities || [])
+    .filter(activity => !activity.deletedAt)
+    .sort((a, b) =>
+      b.startedAt.localeCompare(a.startedAt)
+    )
+    .slice(0, 12);
+
+  container.innerHTML = activities.map(activity => {
+    const details = [
+      formatDuration(activity.durationMinutes),
+      formatDistance(activity.distanceMeters),
+      activity.activeCalories != null
+        ? `${Math.round(activity.activeCalories)} kcal`
+        : null
+    ].filter(Boolean);
+
+    const metadata = activity.metadata || {};
+
+    const heartRate =
+      metadata.heart_rate_avg_bpm != null
+        ? `FC ${Math.round(metadata.heart_rate_avg_bpm)} mitj.${
+            metadata.heart_rate_max_bpm != null
+              ? ` · ${Math.round(metadata.heart_rate_max_bpm)} màx.`
+              : ''
+          }`
+        : null;
+
+    const power =
+      metadata.power_avg_watts != null
+        ? `Potència ${Math.round(metadata.power_avg_watts)} W mitj.${
+            metadata.power_max_watts != null
+              ? ` · ${Math.round(metadata.power_max_watts)} W màx.`
+              : ''
+          }`
+        : null;
+
+    const physiology = [heartRate, power].filter(Boolean);
+
+    const source =
+      activity.source === 'healthkit'
+        ? 'Apple Health'
+        : activity.source || 'manual';
+
+    return `
+      <article class="record-row">
+        <div class="record-row__main">
+          <strong>${activityLabel(activity.type)}</strong>
+          <span>${formatDateTime(activity.startedAt)}</span>
+          <span>${details.join(' · ') || 'Sense mètriques addicionals'}</span>
+          ${
+            physiology.length
+              ? `<span>${physiology.join(' · ')}</span>`
+              : ''
+          }
+        </div>
+        <div class="record-row__actions">
+          <span class="chip">${source}</span>
+        </div>
+      </article>
+    `;
+  }).join('') ||
+    '<p class="empty-state">Encara no hi ha entrenaments importats.</p>';
+}
+
+
 function renderRecentDays(state) {
   $('recentEntries').innerHTML = [...state.days].reverse().slice(0, 7).map(entry => {
     const burn = totalBurn(state, entry);
@@ -190,6 +320,7 @@ export function renderApp(state, today) {
 
   renderWeightHistory(state);
   renderWaistHistory(state);
+  renderActivities(state);
   renderRecentDays(state);
 }
 

@@ -265,7 +265,7 @@ Integra les recomanacions de tots els especialistes i resol conflictes. Per exem
   - Inference inicial a partir de tendència de pes i dades de despesa disponibles.
   - Dèficit, manteniment o superàvit sempre expressats com a estimació amb incertesa.
   - El registre d’àpats queda com a funcionalitat futura i opcional del nutricionista.
-- Activitat i entrenaments manuals.
+- Activitat i entrenaments.
 - Check-in diari.
 - Dashboard diari.
 - Historial i gràfiques.

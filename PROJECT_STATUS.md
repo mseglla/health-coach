@@ -10,7 +10,7 @@ Construir un sistema personal de salut i rendiment que integri Apple Watch i App
 
 - **Fase actual:** Fase 2 — Nucli personal de salut
 - **Estat:** en curs
-- **Pròxima fita:** continuar la Fase 2 amb activitat i entrenaments manuals
+- **Pròxima fita:** continuar la Fase 2 amb check-in diari
 - **Branca d’integració:** `develop`
 - **Producció estable:** `main`
 
@@ -143,7 +143,7 @@ Demostrar amb dades reals que el flux `Apple Watch → Apple Health → connecto
 - [x] Perfil i objectius.
 - [x] Pes i mesures.
 - [x] Balanç energètic i nutrició inferida.
-- [ ] Activitat i entrenaments manuals.
+- [x] Activitat i entrenaments.
 - [ ] Check-in diari.
 - [ ] Dashboard diari.
 - [ ] Historial i gràfiques.
@@ -191,6 +191,22 @@ Demostrar amb dades reals que el flux `Apple Watch → Apple Health → connecto
 - La UI definitiva de la Home queda pendent d’un redisseny posterior.
 - Validació funcional real amb dades de pes de l’usuari: dèficit inferit detectat correctament.
 - Commit principal: `beac016`.
+
+### Validació Activitat i entrenaments 2026-08-19
+
+- `activity_logs` connectada a ATLES com a font remota d'entrenaments.
+- Els entrenaments importats des de HealthKit es mostren a la PWA sense registre manual.
+- Validat el flux `Apple Watch → Apple Health → connector → Supabase → ATLES`.
+- Es mostren tipus d'activitat, data/hora, durada, calories actives i distància quan existeixen.
+- Afegida lectura de freqüència cardíaca mitjana i màxima per entrenament.
+- Afegida lectura de potència mitjana i màxima per running i ciclisme quan HealthKit disposa de la dada.
+- FC i potència es guarden dins de `metadata` sense necessitat de nova migració.
+- Les dades absents no es representen com a zero.
+- Validada la deduplicació mitjançant `(user_id, source, external_id)`.
+- La resincronització actualitza registres existents sense crear duplicats.
+- Mapatge de `coreTraining` afegit com a `core_training`.
+- Validació funcional real completada amb entrenaments importats de l'Apple Watch.
+- Commit principal: `e7f2cb1`.
 
 ## Fase 3 — Apple Health complet
 
