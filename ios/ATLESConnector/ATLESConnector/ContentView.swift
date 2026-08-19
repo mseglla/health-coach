@@ -165,6 +165,39 @@ struct ContentView: View {
 
                             Button {
                                 Task {
+                                    do {
+                                        let workouts =
+                                            try await healthKit.loadWorkoutHistory()
+
+                                        let metrics =
+                                            await healthKit.loadWorkoutMetrics(
+                                                for: workouts
+                                            )
+
+                                        await sync.syncWorkouts(
+                                            workouts: workouts,
+                                            metricsByWorkout: metrics,
+                                            userId: userId,
+                                            accessToken: accessToken
+                                        )
+                                    } catch {
+                                        sync.errorMessage =
+                                            error.localizedDescription
+                                    }
+                                }
+                            } label: {
+                                if sync.isSyncing {
+                                    ProgressView()
+                                } else {
+                                    Text(
+                                        "Importar historial d'entrenaments"
+                                    )
+                                }
+                            }
+                            .disabled(sync.isSyncing)
+
+                            Button {
+                                Task {
                                     let metrics =
                                         await healthKit.loadWorkoutMetrics(
                                             for: healthKit.workouts

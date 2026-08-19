@@ -71,17 +71,28 @@ final class BackgroundSyncCoordinator {
             return
         }
 
-        await healthKit.loadRecentWorkouts()
+        do {
+            let workouts =
+                try await healthKit.loadRecentWorkoutHistory(
+                    days: 14
+                )
 
-        let metrics = await healthKit.loadWorkoutMetrics(
-            for: healthKit.workouts
-        )
+            let metrics =
+                await healthKit.loadWorkoutMetrics(
+                    for: workouts
+                )
 
-        await sync.syncWorkouts(
-            workouts: healthKit.workouts,
-            metricsByWorkout: metrics,
-            userId: session.userId,
-            accessToken: session.accessToken
-        )
+            await sync.syncWorkouts(
+                workouts: workouts,
+                metricsByWorkout: metrics,
+                userId: session.userId,
+                accessToken: session.accessToken
+            )
+        } catch {
+            print(
+                "ATLES workout background sync failed:",
+                error.localizedDescription
+            )
+        }
     }
 }

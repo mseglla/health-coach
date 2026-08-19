@@ -941,6 +941,83 @@ final class HealthKitManager: ObservableObject {
         }
     }
 
+    func loadWorkoutHistory(
+        from startDate: Date? = nil,
+        to endDate: Date = Date()
+    ) async throws -> [HKWorkout] {
+        let workoutType = HKObjectType.workoutType()
+
+        let predicate: NSPredicate?
+
+        if let startDate {
+            predicate = HKQuery.predicateForSamples(
+                withStart: startDate,
+                end: min(endDate, Date()),
+                options: .strictStartDate
+            )
+        } else {
+            predicate = HKQuery.predicateForSamples(
+                withStart: nil,
+                end: min(endDate, Date()),
+                options: []
+            )
+        }
+
+        let sort = NSSortDescriptor(
+            key: HKSampleSortIdentifierStartDate,
+            ascending: true
+        )
+
+        return try await withCheckedThrowingContinuation {
+            (
+                continuation:
+                CheckedContinuation<[HKWorkout], Error>
+            ) in
+
+            let query = HKSampleQuery(
+                sampleType: workoutType,
+                predicate: predicate,
+                limit: HKObjectQueryNoLimit,
+                sortDescriptors: [sort]
+            ) { _, samples, error in
+
+                if let error {
+                    continuation.resume(
+                        throwing: error
+                    )
+                    return
+                }
+
+                continuation.resume(
+                    returning:
+                        samples as? [HKWorkout] ?? []
+                )
+            }
+
+            healthStore.execute(query)
+        }
+    }
+
+    func loadRecentWorkoutHistory(
+        days: Int = 14
+    ) async throws -> [HKWorkout] {
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: Date())
+
+        guard let startDate = calendar.date(
+            byAdding: .day,
+            value: -(max(days, 1) - 1),
+            to: today
+        ) else {
+            return []
+        }
+
+        return try await loadWorkoutHistory(
+            from: startDate,
+            to: Date()
+        )
+    }
+
     func loadRecentWorkouts() async {
         let workoutType = HKObjectType.workoutType()
 

@@ -431,6 +431,8 @@ final class SupabaseHealthSyncManager: ObservableObject {
             return "elliptical"
         case .stairClimbing:
             return "stair_climbing"
+        case .stairs:
+            return "stairs"
         case .dance:
             return "dance"
         case .soccer:
