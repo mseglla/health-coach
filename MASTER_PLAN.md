@@ -260,7 +260,11 @@ Integra les recomanacions de tots els especialistes i resol conflictes. Per exem
 
 - Perfil i objectius.
 - Pes i mesures.
-- Àpats i nutrició bàsica.
+- Balanç energètic i nutrició inferida.
+  - No requereix registre manual d’àpats ni recompte diari de calories.
+  - Inference inicial a partir de tendència de pes i dades de despesa disponibles.
+  - Dèficit, manteniment o superàvit sempre expressats com a estimació amb incertesa.
+  - El registre d’àpats queda com a funcionalitat futura i opcional del nutricionista.
 - Activitat i entrenaments manuals.
 - Check-in diari.
 - Dashboard diari.

@@ -21,7 +21,7 @@
       <section id="home" class="screen is-active" aria-labelledby="home-title">
         <header class="screen-header">
           <div>
-            <p class="eyebrow">MISSIÓ 85</p>
+            <p class="eyebrow">ATLES</p>
             <h1 id="home-title">Hola, <span id="greetingName">Marc</span></h1>
             <p class="screen-subtitle">La millor decisió per avui.</p>
           </div>
@@ -43,28 +43,24 @@
           </div>
         </section>
 
-        <section class="orbit-card" aria-label="Estat del dia">
-          <div class="orbit" id="orbit">
-            <div class="orbit__glow"></div>
-            <svg class="orbit__svg" viewBox="0 0 220 220" role="img" aria-label="Progrés energètic del dia">
-              <circle class="orbit__track" cx="110" cy="110" r="88"></circle>
-              <circle id="orbitProgress" class="orbit__progress" cx="110" cy="110" r="88"></circle>
-              <circle id="orbitActivity" class="orbit__activity" cx="110" cy="110" r="72"></circle>
-            </svg>
-            <div class="orbit__content">
-              <span id="statusPill" class="status-pill status-pill--neutral">SENSE DADES</span>
-              <strong id="balanceToday" class="orbit__value">—</strong>
-              <span class="orbit__unit">kcal</span>
-              <span id="orbitCaption" class="orbit__caption">Registra el dia</span>
+        <section class="surface-card energy-status-card" aria-label="Balanç energètic inferit">
+          <div class="energy-status-card__header">
+            <div>
+              <span class="section-kicker">BALANÇ ENERGÈTIC</span>
+              <h2 id="statusPill">APRENENT</h2>
             </div>
+            <strong id="balanceToday" class="energy-status-card__value">—</strong>
           </div>
+          <p id="orbitCaption" class="energy-status-card__detail">
+            Construint tendència
+          </p>
         </section>
 
         <section class="coach-card">
           <div class="coach-card__icon">✦</div>
           <div>
             <p class="coach-card__label">LA MILLOR DECISIÓ ARA</p>
-            <h2 id="recommendation">Registra el pes i les calories d'avui.</h2>
+            <h2 id="recommendation">Construint una lectura personal de la teva evolució.</h2>
           </div>
         </section>
 
@@ -80,9 +76,9 @@
             <small id="weightTrend">Esperant dades</small>
           </article>
           <article class="metric-card metric-card--intake">
-            <span class="metric-card__label">Ingerides</span>
-            <strong id="intakeToday">0</strong>
-            <small>kcal</small>
+            <span class="metric-card__label">Balanç inferit</span>
+            <strong id="energyBalance">—</strong>
+            <small id="energyBalanceDetail">esperant tendència</small>
           </article>
           <article class="metric-card metric-card--burn">
             <span class="metric-card__label">Gastades</span>
@@ -193,7 +189,7 @@
           <div class="section-title-row section-title-row--form">
             <div>
               <span class="section-kicker">ENERGIA</span>
-              <h2>Activitat i balanç</h2>
+              <h2>Activitat i despesa</h2>
             </div>
             <span class="chip">avui</span>
           </div>
@@ -212,11 +208,6 @@
               <div class="field__control"><input id="stepsInput" inputmode="numeric" placeholder="8000" /></div>
             </label>
           </div>
-          <label class="field">
-            <span>Calories ingerides totals</span>
-            <div class="field__control"><input id="intakeInput" inputmode="numeric" placeholder="2050" /><em>kcal</em></div>
-            <small>Introdueix l’estimació total del dia.</small>
-          </label>
           <button class="button button--primary" type="submit">Guardar energia i activitat</button>
         </form>
 

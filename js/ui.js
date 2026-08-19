@@ -7,6 +7,7 @@ import {
   formatDateShort,
   formatDateTime,
   formatKg,
+  inferEnergyBalance,
   latestWeightRecord,
   totalBurn,
   totalIntake,
@@ -30,21 +31,25 @@ export function getTodayRecord(state, date) {
   return state.days.find(day => day.date === date) || { date };
 }
 
-function updateOrbit(state, day, decision) {
-  const burn = totalBurn(state, day);
-  const intake = totalIntake(state, day);
-  const deficit = burn != null && intake != null ? burn - intake : null;
-  const targetDeficit = 500;
-  const progress = deficit == null ? 0 : Math.max(0, Math.min(1, deficit / targetDeficit));
-  const activityProgress = day.active == null ? 0 : Math.max(0, Math.min(1, day.active / 600));
-  $('orbitProgress').style.strokeDashoffset = String(553 * (1 - progress));
-  $('orbitActivity').style.strokeDashoffset = String(452 * (1 - activityProgress));
-  $('orbitProgress').style.stroke = decision.tone === 'bad' ? '#ff5f7a' : decision.tone === 'warn' ? '#ffae4a' : '#b7ff3c';
-  $('balanceToday').textContent = deficit == null ? '—' : `${deficit >= 0 ? '−' : '+'}${Math.abs(Math.round(deficit))}`;
+function updateOrbit(state, _day, decision) {
+  const balance = inferEnergyBalance(state);
+
+  if (!balance.available) {
+    $('balanceToday').textContent = '—';
+  } else if (balance.status === 'deficit') {
+    $('balanceToday').textContent =
+      `−${balance.absoluteBalanceKcal} kcal/dia`;
+  } else if (balance.status === 'surplus') {
+    $('balanceToday').textContent =
+      `+${balance.absoluteBalanceKcal} kcal/dia`;
+  } else {
+    $('balanceToday').textContent = '≈ 0 kcal/dia';
+  }
+
   $('orbitCaption').textContent = decision.caption;
   $('statusPill').textContent = decision.label;
-  $('statusPill').className = `status-pill status-pill--${decision.tone}`;
 }
+
 
 function renderWeightHistory(state) {
   const records = activeWeightRecords(state.weights)
@@ -120,7 +125,7 @@ function renderRecentDays(state) {
 export function renderApp(state, today) {
   const day = getTodayRecord(state, today);
   const burn = totalBurn(state, day);
-  const intake = totalIntake(state, day);
+  const energyBalance = inferEnergyBalance(state);
   const todayWeight = weightForDate(state.weights, today);
   const latest = latestWeightRecord(state.weights);
   const displayWeight = todayWeight || latest;
@@ -148,7 +153,20 @@ export function renderApp(state, today) {
     `${daysUntil(primaryGoal?.targetDate) ?? '—'} dies`;
   $('weightToday').textContent = formatKg(displayWeight?.value);
   $('weightAvg').textContent = formatKg(avg);
-  $('intakeToday').textContent = intake ?? 0;
+  $('energyBalance').textContent =
+    !energyBalance.available
+      ? '—'
+      : energyBalance.status === 'deficit'
+        ? `−${energyBalance.absoluteBalanceKcal}`
+        : energyBalance.status === 'surplus'
+          ? `+${energyBalance.absoluteBalanceKcal}`
+          : '≈0';
+
+  $('energyBalanceDetail').textContent =
+    !energyBalance.available
+      ? 'esperant tendència'
+      : `kcal/dia · ${energyBalance.confidence === 'medium' ? 'confiança mitjana' : 'confiança baixa'}`;
+
   $('burnToday').textContent = burn ?? '—';
   $('burnSourceToday').textContent = burn == null ? 'sense dades' : burnSource(day) || 'estimades';
   $('weightDelta').textContent = displayWeight
@@ -159,7 +177,6 @@ export function renderApp(state, today) {
   updateOrbit(state, day, decision);
 
   $('stepsInput').value = day.steps ?? '';
-  $('intakeInput').value = day.intake ?? '';
   $('activeInput').value = day.active ?? '';
   $('totalInput').value = day.total ?? '';
   $('nameSetting').value = state.profile?.displayName ?? '';

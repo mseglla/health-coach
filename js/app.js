@@ -326,10 +326,14 @@ $('dayForm').addEventListener('submit', async event => {
     return;
   }
 
+  const date = todayISO();
+  const existingDay =
+    state.days.find(day => day.date === date) || null;
+
   const data = {
-    date: todayISO(),
+    date,
     steps: parseNumber($('stepsInput').value),
-    intake: parseNumber($('intakeInput').value),
+    intake: existingDay?.intake ?? null,
     active: parseNumber($('activeInput').value),
     total: parseNumber($('totalInput').value)
   };

@@ -1,24 +1,57 @@
-import { totalBurn, totalIntake, averageWeight, latestWeight } from './calculations.js';
+import {
+  inferEnergyBalance,
+  latestWeight
+} from './calculations.js';
 
-export function getCoachDecision(state, day) {
-  const burn = totalBurn(state, day);
-  const intake = totalIntake(state, day);
-  const deficit = burn != null && intake != null ? burn - intake : null;
+export function getCoachDecision(state, _day) {
   const weights = state.weights || [];
 
-  if (!latestWeight(weights)) return { tone: 'neutral', label: 'SENSE DADES', title: 'Pesa’t per començar a personalitzar el pla.', caption: 'Comença pel pes' };
-  if (intake == null || burn == null) return { tone: 'warn', label: 'DIA INCOMPLET', title: 'Completa la ingesta i la despesa total o activa.', caption: 'Falten dades' };
-
-  if (weights.length >= 14) {
-    const first = averageWeight(weights, 7, 7);
-    const second = averageWeight(weights, 7, 0);
-    if (first != null && second != null && second >= first - 0.1) {
-      return { tone: 'bad', label: 'CAL INTERVENIR', title: 'La tendència és plana. Aquesta setmana caldrà una mesura petita i concreta.', caption: 'Estancament real' };
-    }
+  if (!latestWeight(weights)) {
+    return {
+      tone: 'neutral',
+      label: 'SENSE DADES',
+      title: 'Pesa’t per començar a entendre la teva evolució.',
+      caption: 'Comença pel pes'
+    };
   }
 
-  if (deficit > 850) return { tone: 'warn', label: 'DÈFICIT ALT', title: 'No forcis més avui. Menja prou per recuperar-te.', caption: 'Prioritza recuperar' };
-  if (deficit >= 300) return { tone: 'good', label: 'EN RUTA', title: `Dèficit estimat de ${Math.round(deficit)} kcal. Mantén el pla.`, caption: 'Objectiu assolit' };
-  if (deficit >= 0) return { tone: 'warn', label: 'MARGE PETIT', title: 'Una caminada curta o un sopar una mica més lleuger poden completar el dia.', caption: 'Encara hi ha marge' };
-  return { tone: 'bad', label: 'FORA DE RUTA', title: 'No ho compensis amb càstig. Reprèn el pla amb normalitat demà.', caption: 'Superàvit estimat' };
+  const balance = inferEnergyBalance(state);
+
+  if (!balance.available) {
+    return {
+      tone: 'neutral',
+      label: 'APRENENT',
+      title:
+        'Encara necessito més dies de pes per estimar el teu balanç energètic.',
+      caption: 'Construint tendència'
+    };
+  }
+
+  if (balance.status === 'deficit') {
+    return {
+      tone: 'good',
+      label: 'DÈFICIT INFERIT',
+      title:
+        'La tendència del pes indica que probablement estàs en dèficit energètic.',
+      caption: `≈ ${balance.absoluteBalanceKcal} kcal/dia · confiança ${balance.confidence === 'medium' ? 'mitjana' : 'baixa'}`
+    };
+  }
+
+  if (balance.status === 'surplus') {
+    return {
+      tone: 'warn',
+      label: 'SUPERÀVIT INFERIT',
+      title:
+        'La tendència del pes indica que probablement estàs en superàvit energètic.',
+      caption: `≈ ${balance.absoluteBalanceKcal} kcal/dia · confiança ${balance.confidence === 'medium' ? 'mitjana' : 'baixa'}`
+    };
+  }
+
+  return {
+    tone: 'neutral',
+    label: 'MANTENIMENT',
+    title:
+      'La tendència del pes és compatible amb un balanç energètic proper al manteniment.',
+    caption: `confiança ${balance.confidence === 'medium' ? 'mitjana' : 'baixa'}`
+  };
 }
