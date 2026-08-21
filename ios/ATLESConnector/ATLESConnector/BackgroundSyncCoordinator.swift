@@ -41,13 +41,29 @@ final class BackgroundSyncCoordinator {
             return
         }
 
-        await healthKit.loadTodaySteps()
+        do {
+            let metrics =
+                try await healthKit.loadRecentDailyHistory(
+                    days: 7,
+                    baselineDays: 30
+                )
 
-        await sync.syncTodaySteps(
-            steps: healthKit.todaySteps,
-            userId: session.userId,
-            accessToken: session.accessToken
-        )
+            await sync.syncDailyMetrics(
+                metrics: metrics,
+                userId: session.userId,
+                accessToken: session.accessToken
+            )
+
+            // Mantenim també l'estat publicat
+            // que utilitza la UI del connector.
+            await healthKit.loadTodaySteps()
+
+        } catch {
+            print(
+                "ATLES daily background sync failed:",
+                error.localizedDescription
+            )
+        }
     }
 
     private func syncWorkouts() async {
@@ -55,17 +71,28 @@ final class BackgroundSyncCoordinator {
             return
         }
 
-        await healthKit.loadRecentWorkouts()
+        do {
+            let workouts =
+                try await healthKit.loadRecentWorkoutHistory(
+                    days: 14
+                )
 
-        let metrics = await healthKit.loadWorkoutMetrics(
-            for: healthKit.workouts
-        )
+            let metrics =
+                await healthKit.loadWorkoutMetrics(
+                    for: workouts
+                )
 
-        await sync.syncWorkouts(
-            workouts: healthKit.workouts,
-            metricsByWorkout: metrics,
-            userId: session.userId,
-            accessToken: session.accessToken
-        )
+            await sync.syncWorkouts(
+                workouts: workouts,
+                metricsByWorkout: metrics,
+                userId: session.userId,
+                accessToken: session.accessToken
+            )
+        } catch {
+            print(
+                "ATLES workout background sync failed:",
+                error.localizedDescription
+            )
+        }
     }
 }

@@ -45,21 +45,42 @@ export class SupabaseHealthMetricsRepository {
 
     const client = await this.getClient();
 
-    const result = await client
-      .from('health_daily_metrics')
-      .select(
-        'metric_date, metric_type, value, unit, source, timezone, imported_at'
-      )
-      .eq('user_id', userId)
-      .is('deleted_at', null)
-      .order('metric_date', { ascending: true });
+    const pageSize = 500;
+    let offset = 0;
+    const rows = [];
 
-    const rows = this.unwrap(
-      result,
-      'No s’han pogut carregar les mètriques de salut'
-    );
+    while (true) {
+      const result = await client
+        .from('health_daily_metrics')
+        .select(
+          'metric_date, metric_type, value, unit, source, timezone, imported_at'
+        )
+        .eq('user_id', userId)
+        .is('deleted_at', null)
+        .order('metric_date', { ascending: true })
+        .order('metric_type', { ascending: true })
+        .order('source', { ascending: true })
+        .range(
+          offset,
+          offset + pageSize - 1
+        );
 
-    state.healthMetrics = rows.map(row => this.toRecord(row));
+      const page = this.unwrap(
+        result,
+        'No s’han pogut carregar les mètriques de salut'
+      );
+
+      rows.push(...page);
+
+      if (page.length < pageSize) {
+        break;
+      }
+
+      offset += pageSize;
+    }
+
+    state.healthMetrics =
+      rows.map(row => this.toRecord(row));
 
     return state;
   }
