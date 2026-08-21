@@ -4,40 +4,69 @@
 
 ATLES és un sistema operatiu personal de salut i rendiment. L’objectiu és que cada usuari disposi d’un equip digital coordinat comparable al que tindria un esportista d’elit: preparador físic, nutricionista, especialista en recuperació i son, psicòleg esportiu, analista de rendiment i suport mèdic preventiu.
 
-ATLES no substitueix professionals sanitaris ni diagnostica. Recull dades, les interpreta, aprèn de la resposta individual de cada persona i converteix informació dispersa en decisions útils, personalitzades i explicables.
+ATLES no és un visor de dades ni un tracker de calories. Apple Health, Apple Watch i la resta de fonts són sensors que alimenten el sistema. El producte és la interpretació: entendre com està l’usuari, com evoluciona respecte als seus objectius, què està funcionant, què no i quina és la millor acció següent.
+
+ATLES no substitueix professionals sanitaris ni diagnostica. Recull dades, les interpreta, aprèn de la resposta individual de cada persona i converteix informació dispersa en decisions útils, personalitzades, accionables i explicables.
+
+El seu bucle fonamental és:
+
+`objectiu → observar → interpretar → decidir → actuar → mesurar la resposta → adaptar`
 
 ## 2. Missió
 
-Construir el millor entrenador personal digital possible, capaç de conèixer profundament cada usuari, acumular memòria durant anys i ajudar-lo a prendre millors decisions cada dia sobre salut, entrenament, nutrició, recuperació i benestar.
+Construir el millor entrenador personal digital possible, capaç de conèixer profundament cada usuari, acumular memòria durant anys i guiar-lo de manera clara cap als seus objectius de salut i rendiment.
+
+ATLES ha de poder respondre, amb el mínim soroll possible, quatre preguntes:
+
+1. Com estic?
+2. Com estic evolucionant?
+3. Estic en trajectòria d’aconseguir els meus objectius?
+4. Què em convé fer ara?
 
 ## 3. Principis
 
-- **Local First:** l’aplicació ha de continuar funcionant sense connexió.
+- **Goals First:** les dades i recomanacions s’interpreten en relació amb objectius explícits de l’usuari.
+- **Interpretation First:** conclusions, tendències i decisions abans que dades brutes.
+- **Closed Loop:** ATLES observa, recomana, mesura la resposta i adapta les recomanacions futures.
+- **Honest Feedback:** si l’usuari no progressa, s’estanca o va en una mala direcció, ATLES ho diu clarament i proposa una acció.
+- **Online First:** Supabase és la font de veritat de les dades de salut del compte; no es mostren estats de guardat falsos sense connexió.
 - **Privacy First:** les dades pertanyen a l’usuari i s’han de protegir per defecte.
 - **AI First:** la IA forma part del disseny del sistema, no és un afegit final.
 - **Data Driven:** les recomanacions han de basar-se en dades i evidència.
 - **Explainable AI:** cada recomanació ha d’explicar el perquè, les dades utilitzades i el grau de confiança.
-- **Human First:** el sistema s’adapta a la vida real, no exigeix perfecció.
+- **Uncertainty Explicit:** ATLES diferencia entre fets observats, estimacions i hipòtesis.
+- **Human First:** el sistema s’adapta a la vida real, no exigeix perfecció ni una entrada manual obsessiva de dades.
 - **Science over trends:** prioritat a criteris sòlids per davant de modes.
 - **Adherència abans que perfecció:** la millor recomanació és la que l’usuari pot seguir.
-- **Simplicitat abans que saturació:** mostrar el que és útil en cada moment.
+- **Tendències abans que soroll:** no es prenen decisions importants per una sola dada o un sol dia si no hi ha motiu.
+- **Simplicitat abans que saturació:** mostrar només informació que ajudi a entendre l’estat, el progrés o la següent decisió.
 - **Base sòlida abans que funcionalitats:** canvis petits, revisables i recuperables.
 
 ## 4. Arquitectura de referència
 
 ```text
-PWA
+Apple Watch / Apple Health / altres fonts
 ↓
-IndexedDB — font principal durant l’ús
+Connector iOS i integracions
 ↓
-Sync Engine
+Supabase — autenticació, font de veritat i backend
 ↓
-Supabase — autenticació, còpia sincronitzada i backend
+PWA ATLES
 ↓
-Motor d’intel·ligència, IA i integracions externes
+Motor d’analítica, interpretació, coaches i Digital Twin
 ```
 
-Les dades originals es guarden com a registres. Els valors derivats —pes actual, dèficit, mitjanes, ratxes, càrrega o tendències— es calculen i no es dupliquen innecessàriament.
+ATLES segueix una arquitectura online-first per a les dades de salut del compte.
+
+Supabase és la font de veritat. IndexedDB i localStorage només es poden utilitzar com a memòria cau, migració o suport local no autoritatiu. No s’implementen cues offline de mutacions ni resolució general de conflictes mentre no siguin necessàries.
+
+Les dades originals es guarden com a registres. Els valors derivats —tendències, càrrega, readiness, progrés, estimacions o conclusions— es calculen o versionen de manera explícita i no es dupliquen innecessàriament.
+
+La PWA no accedeix directament a HealthKit. El flux de referència és:
+
+```text
+Apple Watch → Apple Health → connector iOS → Supabase → ATLES
+```
 
 ## 5. Equip virtual d’ATLES
 
@@ -225,32 +254,82 @@ Integra les recomanacions de tots els especialistes i resol conflictes. Per exem
 
 **Criteri de sortida:** un usuari pot iniciar sessió, treballar offline i sincronitzar dades sense pèrdues ni accés creuat.
 
-### Fase 2 — Nucli personal de salut
+### Fase 2 — Nucli personal de salut ✅ COMPLETADA
 
 **Objectiu:** convertir ATLES en una aplicació útil cada dia.
 
-- Perfil i objectius.
-- Pes i mesures.
-- Àpats i nutrició bàsica.
-- Activitat i entrenaments manuals.
-- Check-in diari.
-- Dashboard diari.
-- Historial i gràfiques.
-- Registre ràpid.
+- [x] Perfil i objectius.
+- [x] Pes i mesures.
+- [x] Balanç energètic i nutrició inferida.
+  - No requereix registre manual d’àpats ni recompte diari de calories.
+  - Inferència inicial a partir de tendència de pes i dades de despesa disponibles.
+  - Dèficit, manteniment o superàvit expressats com a estimació amb incertesa.
+  - El registre d’àpats queda com a funcionalitat futura i opcional del nutricionista.
+- [x] Activitat i entrenaments.
+- [x] Check-in contextual i opcional.
+- [x] Dashboard diari.
+- [x] Historial i gràfiques.
+- [x] Registre ràpid.
 
-**Criteri de sortida:** l’usuari pot registrar i entendre el seu dia complet des d’una única app.
+**Criteri de sortida:** completat.
 
-### Fase 3 — Dades automàtiques i Apple Health
+### Fase 3 — Dades automàtiques i Apple Health 🟡 EN CURS
 
-**Objectiu:** reduir al mínim l’entrada manual.
+**Objectiu:** reduir al mínim l’entrada manual i construir un historial fiable de llarg termini.
 
-- Importació de passos, calories, pes, son, entrenaments, HRV, freqüència cardíaca i VO₂max.
-- Deduplificació i normalització.
-- Permisos i control de fonts.
-- Sincronització incremental.
-- Transparència sobre l’origen de cada dada.
+#### Connector i infraestructura
 
-**Criteri de sortida:** ATLES disposa d’un historial fiable i automatitzat de salut i activitat.
+- [x] Connector iOS HealthKit → Supabase.
+- [x] Autorització HealthKit.
+- [x] Background Delivery validat en dispositiu real.
+- [x] Observer de passos.
+- [x] Observer d’entrenaments.
+- [x] Upsert i deduplicació a Supabase.
+- [x] Importació històrica + refresc recent.
+- [x] Migració de tipus de mètriques diàries.
+
+#### Activitat diària
+
+- [x] Passos.
+- [x] Distància caminant/corrent.
+- [x] Calories actives.
+- [x] Calories de repòs.
+- [x] Calories totals derivades.
+- [x] Control de cobertura per evitar totals falsos en dies parcials.
+- [x] Refresc recent idempotent.
+- [x] Corregir visualització de passos a la PWA: les dades existeixen a Supabase però la gràfica de 14 dies apareix buida.
+
+#### Entrenaments
+
+- [x] Importació històrica completa.
+- [x] 519 entrenaments HealthKit validats.
+- [x] Historial disponible des de 2019.
+- [x] Deduplicació per UUID HealthKit.
+- [x] Refresc recent.
+- [x] Tipus principals normalitzats.
+- [x] Freqüència cardíaca mitjana/màxima dins dels entrenaments quan HealthKit la proporciona.
+- [x] Potència mitjana/màxima per running/cycling quan HealthKit la proporciona.
+
+#### Salut i recuperació pendents
+
+- [ ] Freqüència cardíaca general.
+- [ ] Freqüència cardíaca en repòs.
+- [ ] HRV.
+- [ ] Son.
+- [ ] VO₂max.
+- [ ] Pes procedent de fonts HealthKit compatibles.
+- [ ] Composició corporal procedent de fonts compatibles.
+
+#### Qualitat de dades
+
+- [x] No inventar zeros quan no hi ha dades.
+- [x] Distingir dies parcialment coberts.
+- [x] Mantenir les dades originals i derivar `total_kcal`.
+- [ ] Estratègia explícita de dades eliminades/modificades a HealthKit.
+- [ ] Transparència de fonts a la PWA.
+- [ ] Validació final de permisos i casos límit.
+
+**Criteri de sortida:** ATLES disposa d’un historial fiable i automatitzat de salut i activitat, sincronitzat sense intervenció manual i interpretat correctament per la PWA.
 
 ### Fase 4 — Primers coaches útils
 

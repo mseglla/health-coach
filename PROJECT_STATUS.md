@@ -8,9 +8,9 @@ Construir un sistema personal de salut i rendiment que integri Apple Watch i App
 
 ## Estat global
 
-- **Fase actual:** Fase 1 — Infraestructura segura i online-first
+- **Fase actual:** Fase 2 — Nucli personal de salut
 - **Estat:** en curs
-- **Pròxima fita:** crear preview/staging i validar-hi la base online-first
+- **Pròxima fita:** començar la Fase 3 amb Apple Health complet
 - **Branca d’integració:** `develop`
 - **Producció estable:** `main`
 
@@ -83,26 +83,198 @@ Un usuari pot autenticar-se, llegir i modificar les seves dades amb connexió, r
 
 ## Fase 1B — Prova tècnica Apple Health
 
-- [ ] Definir contracte de dades HealthKit → ATLES.
-- [ ] Preparar camps d’origen, dispositiu i identificador extern.
-- [ ] Validar una capa nativa iOS mínima.
-- [ ] Importar almenys passos i entrenaments.
-- [ ] Provar deduplicació i sincronització segura.
+- [x] Definir contracte de dades HealthKit → ATLES.
+- [x] Preparar camps d’origen, dispositiu i identificador extern.
+- [x] Validar una capa nativa iOS mínima.
+- [x] Importar almenys passos i entrenaments.
+- [x] Provar deduplicació i sincronització segura amb dades reals de HealthKit.
+- [x] Validar sincronització automàtica de passos en segon pla.
+- [x] Validar sincronització automàtica d'entrenaments en segon pla.
+
+### Base HealthKit validada 2026-08-10
+
+- Contracte `HealthKit → connector iOS → Supabase → ATLES` documentat.
+- Creada `health_daily_metrics` per separar mètriques automàtiques diàries dels resums manuals.
+- Creada `activity_logs` per activitats manuals i entrenaments importats.
+- Identitat única de mètrica: `(user_id, metric_date, metric_type, source)`.
+- Identitat única d’activitat importada: `(user_id, source, external_id)`.
+- Camps d’origen preparats: `source`, `external_id`, `source_bundle_id`, `source_device`, `timezone`, `metadata` i `imported_at` segons la taula.
+- Migració `20260806213000_healthkit_foundation.sql` aplicada a Supabase i historial local/remot alineat.
+- RLS verificada per `health_daily_metrics` i `activity_logs`: `SELECT`, `INSERT` i `UPDATE` limitats a l’usuari autenticat.
+- Proves remotes amb dos usuaris reals superades per a les dues taules: upsert sense duplicats, aïllament de lectura i bloqueig de suplantació de `user_id`.
+- Canvis integrats a `develop` mitjançant el merge `753e2bf`.
+
+### Validació real HealthKit 2026-08-16
+
+- Connector natiu iOS executat en un iPhone real amb HealthKit.
+- Lectura real de passos i entrenaments validada.
+- Autenticació del connector contra Supabase validada amb un compte ATLES real.
+- Sessió Supabase persistent mitjançant Keychain i renovació amb `refresh_token`.
+- Sincronització manual de passos cap a `health_daily_metrics` validada.
+- Sincronització manual d'entrenaments cap a `activity_logs` validada.
+- Deduplicació real de passos validada: una única fila per `(user_id, metric_date, metric_type, source)` actualitzada mitjançant upsert.
+- HealthKit Background Delivery i `HKObserverQuery` implementats.
+- Sincronització automàtica de passos en segon pla validada en dispositiu real sense prémer cap botó.
+- Branca de treball: `feature/healthkit-supabase-sync`.
+- Últim checkpoint validat de la sessió persistent: `2299084`.
+
+### Validació background d'entrenaments 2026-08-17
+
+- Sessió del connector persistent després de tancar i reobrir l'app, amb credencials conservades al Keychain.
+- Eliminada la competició entre múltiples instàncies de `SupabaseAuthManager`; UI i sincronització en segon pla comparteixen una única sessió.
+- HealthKit Background Delivery confirmat per `stepCount` i `workout`.
+- Passos configurats amb freqüència `.hourly`.
+- Entrenaments configurats amb freqüència `.immediate`.
+- `HKObserverQuery` d'entrenaments validat en un iPhone real.
+- Entrenament iniciat a `2026-08-17 20:15:34+00` i finalitzat a `20:16:36+00`.
+- Sense obrir ATLES Connector, HealthKit va activar l'observer a `20:23:02+00` després de desbloquejar l'iPhone.
+- El mateix entrenament va arribar automàticament a `activity_logs` amb `imported_at = 2026-08-17 20:23:02+00`.
+- Validat, per tant, el flux automàtic `HealthKit → connector iOS en segon pla → Supabase`.
+- Commit final de la prova tècnica: `459c44c`.
 
 ### Criteri de sortida
 
 Demostrar amb dades reals que el flux `Apple Watch → Apple Health → connector iOS → Supabase → ATLES` és viable.
 
+**Criteri assolit el 2026-08-17.**
+
 ## Fase 2 — Nucli personal de salut
 
-- [ ] Perfil i objectius.
-- [ ] Pes i mesures.
-- [ ] Àpats i nutrició bàsica.
-- [ ] Activitat i entrenaments manuals.
-- [ ] Check-in diari.
-- [ ] Dashboard diari.
-- [ ] Historial i gràfiques.
-- [ ] Registre ràpid.
+- [x] Perfil i objectius.
+- [x] Pes i mesures.
+- [x] Balanç energètic i nutrició inferida.
+- [x] Activitat i entrenaments.
+- [x] Check-in contextual i opcional.
+- [x] Dashboard diari — snapshot unificat de l'estat del dia.
+- [x] Historial i gràfiques.
+- [x] Registre ràpid — entrada manual mínima i sota demanda.
+
+### Validació Perfil i objectius 2026-08-18
+
+- `profiles` connectat a Supabase com a font de veritat del perfil.
+- Nom, data de naixement, alçada, sexe metabòlic i zona horària carregats i guardats remotament.
+- L’edat es deriva de la data de naixement per als càlculs metabòlics.
+- Eliminats els valors personals hardcoded de l’estat inicial.
+- `goals` generalitzat per suportar objectius més enllà del pes mitjançant `goal_type`, `target_value`, `target_unit`, `metadata` i `is_primary`.
+- Objectiu de pes carregat, creat i modificat contra Supabase.
+- L’objectiu actiu es mostra al dashboard i conserva els canvis després de recarregar.
+- Migració des dels valors locals antics `settings.goal` i `settings.targetDate` preparada.
+- Les dades remotes de perfil i objectius no s’utilitzen com a font autoritativa del storage local.
+- Service worker limitat a assets GET del mateix origen i actualitzat amb els nous repositoris.
+- Validació funcional real completada en navegador local.
+- Commits principals: `5f3b67e` i `282bbec`.
+
+### Validació Pes i mesures 2026-08-18
+
+- El pes continua gestionat a Supabase amb alta, edició, soft delete, historial i recuperació remota.
+- Afegida `body_measurements` com a model genèric de mesures corporals.
+- El model admet `measurement_type`, `value`, `unit`, `measured_at` i `source`, preparant futures mesures sense redissenyar l’esquema.
+- La cintura és la primera mesura corporal visible a ATLES.
+- Alta, edició, eliminació i persistència de cintura validades contra Supabase.
+- Historial de cintura editable disponible a la UI.
+- RLS activada per limitar lectura, inserció i actualització a l’usuari autenticat.
+- Les mesures corporals remotes no s’utilitzen com a font autoritativa del storage local.
+- Migració `20260818215000_body_measurements.sql` aplicada al Supabase DEV.
+- Validació funcional real completada en navegador local.
+- Commit principal: `e685263`.
+
+### Validació Balanç energètic i nutrició inferida 2026-08-19
+
+- Eliminada la dependència del registre manual de calories ingerides per interpretar el balanç energètic.
+- ATLES infereix dèficit, manteniment o superàvit a partir de la tendència real del pes.
+- La primera versió compara dues finestres de 7 dies i exigeix cobertura mínima de mesures.
+- L’estimació utilitza una equivalència energètica aproximada i es mostra explícitament com a inferència, no com a fet observat.
+- S’informa del grau de confiança de la inferència.
+- El coach deixa de demanar completar la ingesta manual per poder donar una lectura.
+- El dashboard mostra balanç inferit en lloc de calories ingerides.
+- Eliminat l’anell de progrés perquè representava incorrectament una inferència de tendència com si fos un objectiu diari precís.
+- La UI definitiva de la Home queda pendent d’un redisseny posterior.
+- Validació funcional real amb dades de pes de l’usuari: dèficit inferit detectat correctament.
+- Commit principal: `beac016`.
+
+### Validació Activitat i entrenaments 2026-08-19
+
+- `activity_logs` connectada a ATLES com a font remota d'entrenaments.
+- Els entrenaments importats des de HealthKit es mostren a la PWA sense registre manual.
+- Validat el flux `Apple Watch → Apple Health → connector → Supabase → ATLES`.
+- Es mostren tipus d'activitat, data/hora, durada, calories actives i distància quan existeixen.
+- Afegida lectura de freqüència cardíaca mitjana i màxima per entrenament.
+- Afegida lectura de potència mitjana i màxima per running i ciclisme quan HealthKit disposa de la dada.
+- FC i potència es guarden dins de `metadata` sense necessitat de nova migració.
+- Les dades absents no es representen com a zero.
+- Validada la deduplicació mitjançant `(user_id, source, external_id)`.
+- La resincronització actualitza registres existents sense crear duplicats.
+- Mapatge de `coreTraining` afegit com a `core_training`.
+- Validació funcional real completada amb entrenaments importats de l'Apple Watch.
+- Commit principal: `e7f2cb1`.
+
+### Validació Check-in contextual i opcional 2026-08-19
+
+- Afegida `contextual_checkins` a Supabase com a font de veritat del context subjectiu.
+- El check-in és completament opcional i la seva absència no converteix el dia en incomplet.
+- La primera versió pregunta únicament `Com et trobes avui?` amb una escala simple d'1 a 5.
+- Es pot respondre amb un únic toc.
+- La nota lliure és opcional i queda amagada per defecte.
+- L'usuari pot prémer `Ara no` i continuar utilitzant ATLES normalment.
+- L'omissió només es conserva localment per evitar tornar a mostrar la proposta durant el mateix dia.
+- Una resposta queda persistida a Supabase i no torna a demanar-se aquell dia després de recarregar.
+- Preparat el model perquè en el futur ATLES decideixi contextualment quan val la pena proposar un check-in.
+- Validació funcional real completada en navegador local.
+
+### Validació Dashboard diari 2026-08-19
+
+- Creat `dailySnapshot` com a capa única de lectura de l'estat del dia.
+- El snapshot integra pes, tendència, balanç energètic inferit, passos, check-in i entrenaments.
+- Els passos d'Apple Health es consumeixen directament des de `health_daily_metrics`.
+- Creada una capa `dailyInsight` separada de la UI per interpretar el snapshot.
+- La Home prioritza una conclusió principal abans de mostrar mètriques.
+- La lectura diària diferencia entre tendència energètica i trajectòria respecte a l'objectiu.
+- El sistema pot identificar quan el pes baixa però a un ritme inferior al necessari per arribar a l'objectiu en la data marcada.
+- La lectura mostra un màxim de tres evidències principals.
+- Afegida una única recomanació contextual sota `Què et convé fer ara`.
+- El check-in subjectiu pot modificar la recomanació quan l'usuari declara cansament.
+- Eliminada la duplicació entre la targeta de balanç energètic i la recomanació principal.
+- La lògica d'interpretació queda desacoblada de la presentació i preparada per a futures capes d'analítica i IA.
+- Validació funcional real completada en navegador local.
+
+### Validació Historial i gràfiques 2026-08-19
+
+- Pantalla `Progrés` reorganitzada entorn de preguntes útils i no de mètriques decoratives.
+- Afegit resum de pes, passos i càrrega d'entrenament.
+- Pes: historial de fins a 30 registres amb dates reals a l'eix X.
+- Pes puntual separat visualment de la tendència suavitzada.
+- Afegida trajectòria objectiu discontínua basada en el pes inicial de l'objectiu i la data objectiu.
+- La desviació respecte a la trajectòria es quantifica en kg.
+- La lectura de ritme diferencia entre ritme observat i ritme necessari per arribar a l'objectiu.
+- La tendència de pes utilitzada per interpretar progrés evita donar massa pes a una mesura puntual.
+- Passos: mitjana dels dies realment disponibles i cobertura explícita del període.
+- Els dies sense dades no s'interpreten com a zeros ni com a continuïtat observada.
+- Entrenament: sessions i minuts agregats per les últimes 4 setmanes.
+- Els eixos de mètriques no negatives, com passos i minuts d'entrenament, no baixen de zero.
+- Validació funcional real completada en navegador local.
+
+### Validació Registre ràpid 2026-08-19
+
+- La pantalla de registre prioritza només les dades manuals necessàries.
+- Pes i cintura són registres manuals per disseny.
+- Pes i cintura es presenten com accions ràpides sota demanda.
+- Els formularis no ocupen la pantalla per defecte.
+- Guardar una mesura torna a deixar la pantalla neta.
+- Editar registres existents continua obrint el formulari correcte.
+- Passos, calories i entrenaments es prioritzen com a dades automàtiques.
+- El registre manual d'activitat queda disponible com a acció secundària.
+- Validació funcional real completada en navegador local.
+
+### Tancament Fase 2
+
+- Perfil i objectius completats.
+- Pes i mesures completats.
+- Balanç energètic i nutrició inferida completats.
+- Activitat i entrenaments completats.
+- Check-in contextual i opcional completat.
+- Dashboard diari completat.
+- Historial i gràfiques completats.
+- Registre ràpid completat.
 
 ## Fase 3 — Apple Health complet
 

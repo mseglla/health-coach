@@ -21,7 +21,7 @@
       <section id="home" class="screen is-active" aria-labelledby="home-title">
         <header class="screen-header">
           <div>
-            <p class="eyebrow">MISSIÓ 85</p>
+            <p class="eyebrow">ATLES</p>
             <h1 id="home-title">Hola, <span id="greetingName">Marc</span></h1>
             <p class="screen-subtitle">La millor decisió per avui.</p>
           </div>
@@ -43,29 +43,70 @@
           </div>
         </section>
 
-        <section class="orbit-card" aria-label="Estat del dia">
-          <div class="orbit" id="orbit">
-            <div class="orbit__glow"></div>
-            <svg class="orbit__svg" viewBox="0 0 220 220" role="img" aria-label="Progrés energètic del dia">
-              <circle class="orbit__track" cx="110" cy="110" r="88"></circle>
-              <circle id="orbitProgress" class="orbit__progress" cx="110" cy="110" r="88"></circle>
-              <circle id="orbitActivity" class="orbit__activity" cx="110" cy="110" r="72"></circle>
-            </svg>
-            <div class="orbit__content">
-              <span id="statusPill" class="status-pill status-pill--neutral">SENSE DADES</span>
-              <strong id="balanceToday" class="orbit__value">—</strong>
-              <span class="orbit__unit">kcal</span>
-              <span id="orbitCaption" class="orbit__caption">Registra el dia</span>
+        <section
+          id="dailyBrief"
+          class="surface-card daily-brief-card"
+          aria-label="Lectura diària d'ATLES"
+        >
+          <div class="daily-brief-card__header">
+            <div>
+              <span class="section-kicker">LECTURA D'AVUI</span>
+              <h2 id="dailyHeadline">Construint la teva lectura.</h2>
             </div>
+            <span id="dailyTrajectory" class="chip" hidden></span>
+          </div>
+
+          <p id="dailySummary" class="daily-brief-card__summary">
+            Reunint les dades disponibles.
+          </p>
+
+          <div
+            id="dailyEvidence"
+            class="daily-evidence"
+            aria-label="Evidències principals"
+          ></div>
+
+          <div class="daily-action">
+            <span class="daily-action__label">QUÈ ET CONVÉ FER ARA</span>
+            <strong id="dailyAction">
+              Esperant prou context per donar-te una recomanació.
+            </strong>
           </div>
         </section>
 
-        <section class="coach-card">
-          <div class="coach-card__icon">✦</div>
+        <section id="checkinPrompt" class="surface-card checkin-card" hidden>
           <div>
-            <p class="coach-card__label">LA MILLOR DECISIÓ ARA</p>
-            <h2 id="recommendation">Registra el pes i les calories d'avui.</h2>
+            <span class="section-kicker">CHECK-IN OPCIONAL</span>
+            <h2>Com et trobes avui?</h2>
+            <p class="checkin-card__hint">
+              Un toc i prou. Si avui no et ve de gust, ho pots ometre.
+            </p>
           </div>
+
+          <div class="checkin-options" aria-label="Com et trobes avui?">
+            <button type="button" class="mini-button" data-feeling-score="5">Molt bé</button>
+            <button type="button" class="mini-button" data-feeling-score="4">Bé</button>
+            <button type="button" class="mini-button" data-feeling-score="3">Normal</button>
+            <button type="button" class="mini-button" data-feeling-score="2">Cansat</button>
+            <button type="button" class="mini-button" data-feeling-score="1">Molt cansat</button>
+          </div>
+
+          <details class="checkin-note">
+            <summary>Afegir una nota</summary>
+            <label class="field">
+              <span>Opcional</span>
+              <textarea id="checkinNote" rows="2" maxlength="280"
+                placeholder="Alguna cosa a destacar?"></textarea>
+            </label>
+          </details>
+
+          <button
+            type="button"
+            class="button button--ghost button--compact"
+            data-checkin-dismiss
+          >
+            Ara no
+          </button>
         </section>
 
         <section class="metric-grid" aria-label="Mètriques principals">
@@ -80,12 +121,12 @@
             <small id="weightTrend">Esperant dades</small>
           </article>
           <article class="metric-card metric-card--intake">
-            <span class="metric-card__label">Ingerides</span>
-            <strong id="intakeToday">0</strong>
-            <small>kcal</small>
+            <span class="metric-card__label">Balanç inferit</span>
+            <strong id="energyBalance">—</strong>
+            <small id="energyBalanceDetail">esperant tendència</small>
           </article>
           <article class="metric-card metric-card--burn">
-            <span class="metric-card__label">Gastades</span>
+            <span class="metric-card__label">Passos avui</span>
             <strong id="burnToday">—</strong>
             <small id="burnSourceToday">sense dades</small>
           </article>
@@ -101,12 +142,55 @@
         <header class="screen-header screen-header--compact">
           <div>
             <p class="eyebrow">REGISTRE</p>
-            <h1 id="log-title">Avui</h1>
-            <p class="screen-subtitle">Ràpid, editable i sense perdre historial.</p>
+            <h1 id="log-title">Registre ràpid</h1>
+            <p class="screen-subtitle">
+              Només allò que ATLES encara no pot captar automàticament.
+            </p>
           </div>
         </header>
 
-        <form id="weightForm" class="surface-card form-card form-card--accent">
+        <section class="surface-card quick-log-card">
+          <div>
+            <span class="section-kicker">QUÈ VOLS REGISTRAR?</span>
+            <h2>Un toc i prou.</h2>
+          </div>
+
+          <div class="quick-log-actions">
+            <button
+              class="quick-log-action"
+              type="button"
+              data-quick-log="weight"
+            >
+              <span>⚖</span>
+              <strong>Pes</strong>
+              <small>Nova mesura</small>
+            </button>
+
+            <button
+              class="quick-log-action"
+              type="button"
+              data-quick-log="waist"
+            >
+              <span>◎</span>
+              <strong>Cintura</strong>
+              <small>Perímetre manual</small>
+            </button>
+          </div>
+
+          <button
+            class="button button--ghost quick-log-fallback"
+            type="button"
+            data-quick-log="energy"
+          >
+            + Registrar activitat manualment
+          </button>
+        </section>
+
+        <form
+          id="weightForm"
+          class="surface-card form-card form-card--accent"
+          hidden
+        >
           <div class="section-title-row section-title-row--form">
             <div>
               <span class="section-kicker">PES</span>
@@ -139,13 +223,81 @@
           <div id="weightHistory" class="record-list"></div>
         </section>
 
-        <form id="dayForm" class="surface-card form-card">
+        <form
+          id="waistForm"
+          class="surface-card form-card"
+          hidden
+        >
+          <input id="waistRecordId" type="hidden" />
+          <div class="section-title-row section-title-row--form">
+            <div>
+              <span class="section-kicker">MESURES</span>
+              <h2>Cintura</h2>
+            </div>
+            <span class="chip">manual</span>
+          </div>
+
+          <div class="form-grid">
+            <label class="field">
+              <span>Perímetre de cintura</span>
+              <div class="field__control">
+                <input id="waistInput" inputmode="decimal" placeholder="95,0" />
+                <em>cm</em>
+              </div>
+            </label>
+
+            <label class="field">
+              <span>Quan l’has mesurat?</span>
+              <div class="field__control">
+                <input id="waistMeasuredAt" type="datetime-local" />
+              </div>
+            </label>
+          </div>
+
+          <div class="button-row">
+            <button class="button button--primary" type="submit">
+              <span id="waistSubmitLabel">Guardar cintura</span>
+            </button>
+            <button
+              id="cancelWaistEdit"
+              class="button button--ghost button--compact"
+              type="button"
+              hidden
+            >
+              Cancel·lar
+            </button>
+          </div>
+        </form>
+
+        <section class="surface-card">
+          <div class="section-title-row">
+            <h2>Historial de cintura</h2>
+            <span class="chip">editable</span>
+          </div>
+          <div id="waistHistory" class="record-list"></div>
+        </section>
+
+        <section class="surface-card">
+          <div class="section-title-row">
+            <div>
+              <span class="section-kicker">ENTRENAMENTS</span>
+              <h2>Activitat recent</h2>
+            </div>
+          </div>
+          <div id="activityHistory" class="record-list"></div>
+        </section>
+
+        <form
+          id="dayForm"
+          class="surface-card form-card"
+          hidden
+        >
           <div class="section-title-row section-title-row--form">
             <div>
               <span class="section-kicker">ENERGIA</span>
-              <h2>Activitat i balanç</h2>
+              <h2>Entrada manual excepcional</h2>
             </div>
-            <span class="chip">avui</span>
+            <span class="chip">fallback</span>
           </div>
           <label class="field">
             <span>Calories totals</span>
@@ -162,11 +314,6 @@
               <div class="field__control"><input id="stepsInput" inputmode="numeric" placeholder="8000" /></div>
             </label>
           </div>
-          <label class="field">
-            <span>Calories ingerides totals</span>
-            <div class="field__control"><input id="intakeInput" inputmode="numeric" placeholder="2050" /><em>kcal</em></div>
-            <small>Introdueix l’estimació total del dia.</small>
-          </label>
           <button class="button button--primary" type="submit">Guardar energia i activitat</button>
         </form>
 
@@ -184,16 +331,67 @@
           <div>
             <p class="eyebrow">PROGRÉS</p>
             <h1 id="stats-title">Evolució</h1>
-            <p class="screen-subtitle">Menys soroll, més tendència.</p>
+            <p class="screen-subtitle">
+              Tendències que expliquen si estàs avançant.
+            </p>
           </div>
         </header>
+
+        <section class="progress-summary-grid">
+          <article class="surface-card progress-summary-card">
+            <span class="section-kicker">PES · 30 DIES</span>
+            <strong id="historyWeightChange">—</strong>
+            <small id="historyWeightDetail">Esperant dades</small>
+          </article>
+
+          <article class="surface-card progress-summary-card">
+            <span class="section-kicker">PASSOS · 14 DIES</span>
+            <strong id="historyStepsAverage">—</strong>
+            <small id="historyStepsCoverage">Esperant Apple Health</small>
+          </article>
+
+          <article class="surface-card progress-summary-card">
+            <span class="section-kicker">ENTRENAMENT · 4 SETMANES</span>
+            <strong id="historyTrainingTotal">—</strong>
+            <small id="historyTrainingDetail">Sense entrenaments</small>
+          </article>
+        </section>
+
         <section class="surface-card chart-card">
-          <div class="section-title-row"><h2>Pes</h2><span class="chip">30 registres</span></div>
+          <div class="section-title-row">
+            <div>
+              <span class="section-kicker">TENDÈNCIA</span>
+              <h2>Pes</h2>
+            </div>
+            <span class="chart-legend">
+              <i></i>Tendència
+              <b></b>Trajectòria objectiu
+              <span class="chart-legend__point"></span>Pes diari
+            </span>
+          </div>
           <canvas id="weightChart" width="720" height="300"></canvas>
         </section>
+
         <section class="surface-card chart-card">
-          <div class="section-title-row"><h2>Energia</h2><span class="chart-legend"><i></i>Ingerides <b></b>Gastades</span></div>
-          <canvas id="calorieChart" width="720" height="300"></canvas>
+          <div class="section-title-row">
+            <div>
+              <span class="section-kicker">MOVIMENT</span>
+              <h2>Passos</h2>
+            </div>
+            <span class="chip">14 dies</span>
+          </div>
+          <canvas id="stepsChart" width="720" height="300"></canvas>
+        </section>
+
+        <section class="surface-card chart-card">
+          <div class="section-title-row">
+            <div>
+              <span class="section-kicker">CÀRREGA REALITZADA</span>
+              <h2>Temps d'entrenament</h2>
+            </div>
+            <span class="chip">4 setmanes</span>
+          </div>
+          <canvas id="trainingChart" width="720" height="300"></canvas>
         </section>
       </section>
 
@@ -282,10 +480,10 @@
         <form id="settingsForm" class="surface-card form-card">
           <label class="field"><span>Nom</span><div class="field__control"><input id="nameSetting" placeholder="Marc" /></div></label>
           <div class="form-grid">
-            <label class="field"><span>Edat</span><div class="field__control"><input id="ageSetting" inputmode="numeric" /></div></label>
+            <label class="field"><span>Data de naixement</span><div class="field__control"><input id="birthDateSetting" type="date" /></div></label>
             <label class="field"><span>Altura</span><div class="field__control"><input id="heightSetting" inputmode="decimal" /><em>cm</em></div></label>
           </div>
-          <label class="field"><span>Sexe per al càlcul metabòlic</span><div class="field__control"><select id="sexSetting"><option value="male">Home</option><option value="female">Dona</option></select></div></label>
+          <label class="field"><span>Sexe per al càlcul metabòlic</span><div class="field__control"><select id="sexSetting"><option value="">Selecciona...</option><option value="male">Home</option><option value="female">Dona</option></select></div></label>
           <div class="form-grid">
             <label class="field"><span>Pes objectiu</span><div class="field__control"><input id="goalSetting" inputmode="decimal" /><em>kg</em></div></label>
             <label class="field"><span>Data objectiu</span><div class="field__control"><input id="dateSetting" type="date" /></div></label>

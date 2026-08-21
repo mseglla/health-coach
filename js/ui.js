@@ -7,14 +7,17 @@ import {
   formatDateShort,
   formatDateTime,
   formatKg,
+  inferEnergyBalance,
   latestWeightRecord,
   totalBurn,
   totalIntake,
   weightForDate,
   weightTrend
 } from './calculations.js';
-import { getCoachDecision } from './coach.js';
+import { createDailyInsight } from './daily-insight.js';
+import { createDailySnapshot } from './daily-snapshot.js';
 import { drawChart } from './charts.js';
+import { createHistorySummary } from './history-summary.js';
 
 export const $ = id => document.getElementById(id);
 
@@ -30,21 +33,6 @@ export function getTodayRecord(state, date) {
   return state.days.find(day => day.date === date) || { date };
 }
 
-function updateOrbit(state, day, decision) {
-  const burn = totalBurn(state, day);
-  const intake = totalIntake(state, day);
-  const deficit = burn != null && intake != null ? burn - intake : null;
-  const targetDeficit = 500;
-  const progress = deficit == null ? 0 : Math.max(0, Math.min(1, deficit / targetDeficit));
-  const activityProgress = day.active == null ? 0 : Math.max(0, Math.min(1, day.active / 600));
-  $('orbitProgress').style.strokeDashoffset = String(553 * (1 - progress));
-  $('orbitActivity').style.strokeDashoffset = String(452 * (1 - activityProgress));
-  $('orbitProgress').style.stroke = decision.tone === 'bad' ? '#ff5f7a' : decision.tone === 'warn' ? '#ffae4a' : '#b7ff3c';
-  $('balanceToday').textContent = deficit == null ? '—' : `${deficit >= 0 ? '−' : '+'}${Math.abs(Math.round(deficit))}`;
-  $('orbitCaption').textContent = decision.caption;
-  $('statusPill').textContent = decision.label;
-  $('statusPill').className = `status-pill status-pill--${decision.tone}`;
-}
 
 function renderWeightHistory(state) {
   const records = activeWeightRecords(state.weights)
@@ -63,6 +51,178 @@ function renderWeightHistory(state) {
     </article>`).join('') || '<p class="empty-state">Encara no hi ha pesos registrats.</p>';
 }
 
+function renderWaistHistory(state) {
+  const records = (state.bodyMeasurements || [])
+    .filter(record =>
+      record.type === 'waist' &&
+      !record.deletedAt
+    )
+    .sort((a, b) =>
+      b.measuredAt.localeCompare(a.measuredAt)
+    )
+    .slice(0, 12);
+
+  $('waistHistory').innerHTML = records.map(record => `
+    <article class="record-row">
+      <div class="record-row__main">
+        <strong>${record.value.toFixed(1).replace('.', ',')} cm</strong>
+        <span>${formatDateTime(record.measuredAt)}</span>
+      </div>
+      <div class="record-row__actions">
+        <button
+          class="mini-button"
+          type="button"
+          data-waist-action="edit"
+          data-id="${record.id}"
+          aria-label="Editar cintura"
+        >
+          Editar
+        </button>
+        <button
+          class="mini-button mini-button--danger"
+          type="button"
+          data-waist-action="delete"
+          data-id="${record.id}"
+          aria-label="Eliminar cintura"
+        >
+          Eliminar
+        </button>
+      </div>
+    </article>
+  `).join('') ||
+    '<p class="empty-state">Encara no hi ha mesures de cintura.</p>';
+}
+
+function activityLabel(type) {
+  const labels = {
+    running: 'Running',
+    walking: 'Caminar',
+    cycling: 'Ciclisme',
+    core_training: 'Core',
+    strength_training: 'Força',
+    functional_strength_training: 'Força funcional',
+    hiit: 'HIIT',
+    swimming: 'Natació',
+    hiking: 'Senderisme',
+    yoga: 'Ioga',
+    pilates: 'Pilates',
+    rowing: 'Rem',
+    elliptical: 'El·líptica',
+    stair_climbing: 'Escales',
+    dance: 'Dansa',
+    soccer: 'Futbol',
+    tennis: 'Tennis',
+    paddle_sports: 'Pàdel / pala'
+  };
+
+  if (labels[type]) return labels[type];
+
+  if (String(type || '').startsWith('workout_')) {
+    return 'Entrenament';
+  }
+
+  return String(type || 'Entrenament')
+    .replaceAll('_', ' ')
+    .replace(/\b\w/g, letter => letter.toUpperCase());
+}
+
+
+function formatDuration(minutes) {
+  if (minutes == null) return null;
+
+  const rounded = Math.round(minutes);
+
+  if (rounded < 60) return `${rounded} min`;
+
+  const hours = Math.floor(rounded / 60);
+  const rest = rounded % 60;
+
+  return rest
+    ? `${hours} h ${rest} min`
+    : `${hours} h`;
+}
+
+function formatDistance(meters) {
+  if (meters == null) return null;
+
+  if (meters >= 1000) {
+    return `${(meters / 1000)
+      .toFixed(2)
+      .replace('.', ',')} km`;
+  }
+
+  return `${Math.round(meters)} m`;
+}
+
+function renderActivities(state) {
+  const container = $('activityHistory');
+  if (!container) return;
+
+  const activities = (state.activities || [])
+    .filter(activity => !activity.deletedAt)
+    .sort((a, b) =>
+      b.startedAt.localeCompare(a.startedAt)
+    )
+    .slice(0, 12);
+
+  container.innerHTML = activities.map(activity => {
+    const details = [
+      formatDuration(activity.durationMinutes),
+      formatDistance(activity.distanceMeters),
+      activity.activeCalories != null
+        ? `${Math.round(activity.activeCalories)} kcal`
+        : null
+    ].filter(Boolean);
+
+    const metadata = activity.metadata || {};
+
+    const heartRate =
+      metadata.heart_rate_avg_bpm != null
+        ? `FC ${Math.round(metadata.heart_rate_avg_bpm)} mitj.${
+            metadata.heart_rate_max_bpm != null
+              ? ` · ${Math.round(metadata.heart_rate_max_bpm)} màx.`
+              : ''
+          }`
+        : null;
+
+    const power =
+      metadata.power_avg_watts != null
+        ? `Potència ${Math.round(metadata.power_avg_watts)} W mitj.${
+            metadata.power_max_watts != null
+              ? ` · ${Math.round(metadata.power_max_watts)} W màx.`
+              : ''
+          }`
+        : null;
+
+    const physiology = [heartRate, power].filter(Boolean);
+
+    const source =
+      activity.source === 'healthkit'
+        ? 'Apple Health'
+        : activity.source || 'manual';
+
+    return `
+      <article class="record-row">
+        <div class="record-row__main">
+          <strong>${activityLabel(activity.type)}</strong>
+          <span>${formatDateTime(activity.startedAt)}</span>
+          <span>${details.join(' · ') || 'Sense mètriques addicionals'}</span>
+          ${
+            physiology.length
+              ? `<span>${physiology.join(' · ')}</span>`
+              : ''
+          }
+        </div>
+        <div class="record-row__actions">
+          <span class="chip">${source}</span>
+        </div>
+      </article>
+    `;
+  }).join('') ||
+    '<p class="empty-state">Encara no hi ha entrenaments importats.</p>';
+}
+
+
 function renderRecentDays(state) {
   $('recentEntries').innerHTML = [...state.days].reverse().slice(0, 7).map(entry => {
     const burn = totalBurn(state, entry);
@@ -75,53 +235,272 @@ function renderRecentDays(state) {
   }).join('') || '<p class="empty-state">Encara no hi ha registres d’energia.</p>';
 }
 
+function renderDailyBrief(state, snapshot) {
+  const insight = createDailyInsight(
+    state,
+    snapshot
+  );
+
+  $('dailyHeadline').textContent =
+    insight.headline;
+
+  $('dailySummary').textContent =
+    insight.summary;
+
+  $('dailyAction').textContent =
+    insight.action;
+
+  const trajectory = $('dailyTrajectory');
+
+  if (insight.trajectory.status === 'on_track') {
+    trajectory.hidden = false;
+    trajectory.textContent = 'EN TRAJECTÒRIA';
+  } else if (
+    insight.trajectory.status === 'behind'
+  ) {
+    trajectory.hidden = false;
+    trajectory.textContent = 'FORA DE RITME';
+  } else {
+    trajectory.hidden = true;
+    trajectory.textContent = '';
+  }
+
+  $('dailyEvidence').innerHTML =
+    insight.evidence.map(item => `
+      <div class="daily-evidence__item">
+        <span>${item.label}</span>
+        <strong>${item.value}</strong>
+      </div>
+    `).join('');
+}
+
+function renderCheckinPrompt(state, today) {
+  const prompt = $('checkinPrompt');
+  if (!prompt) return;
+
+  const answered = (state.checkins || []).some(
+    checkin =>
+      checkin.date === today &&
+      !checkin.deletedAt
+  );
+
+  prompt.hidden =
+    answered ||
+    Boolean(state.checkinPromptDismissed);
+}
+
 export function renderApp(state, today) {
+  const snapshot = createDailySnapshot(state, today);
   const day = getTodayRecord(state, today);
   const burn = totalBurn(state, day);
-  const intake = totalIntake(state, day);
-  const todayWeight = weightForDate(state.weights, today);
-  const latest = latestWeightRecord(state.weights);
-  const displayWeight = todayWeight || latest;
-  const avg = averageWeight(state.weights, 7);
-  const trend = weightTrend(state.weights);
-  const decision = getCoachDecision(state, day);
+  const energyBalance = inferEnergyBalance(state);
+  const todayWeight =
+    snapshot.weight.measuredToday
+      ? snapshot.weight.record
+      : null;
+  const displayWeight = snapshot.weight.record;
+  const avg = snapshot.weight.average7d;
+  const trend = snapshot.weight.trend7d;
+  const goals = Array.isArray(state.goals) ? state.goals : [];
+  const primaryGoal =
+    goals.find(goal => goal.isPrimary) ||
+    goals[0] ||
+    null;
+  const weightGoal =
+    goals.find(goal => goal.goalType === 'weight') ||
+    null;
 
-  $('greetingName').textContent = state.settings.name || 'Marc';
-  $('missionGoal').textContent = formatKg(state.settings.goal);
-  $('missionDate').textContent = formatDateShort(state.settings.targetDate);
-  $('missionDays').textContent = `${daysUntil(state.settings.targetDate) ?? '—'} dies`;
+  $('greetingName').textContent =
+    state.profile?.displayName || '';
+  $('missionGoal').textContent =
+    primaryGoal?.goalType === 'weight'
+      ? formatKg(primaryGoal.targetValue)
+      : primaryGoal?.title || '—';
+  $('missionDate').textContent =
+    formatDateShort(primaryGoal?.targetDate);
+  $('missionDays').textContent =
+    `${daysUntil(primaryGoal?.targetDate) ?? '—'} dies`;
   $('weightToday').textContent = formatKg(displayWeight?.value);
   $('weightAvg').textContent = formatKg(avg);
-  $('intakeToday').textContent = intake ?? 0;
-  $('burnToday').textContent = burn ?? '—';
-  $('burnSourceToday').textContent = burn == null ? 'sense dades' : burnSource(day) || 'estimades';
+  $('energyBalance').textContent =
+    !energyBalance.available
+      ? '—'
+      : energyBalance.status === 'deficit'
+        ? `−${energyBalance.absoluteBalanceKcal}`
+        : energyBalance.status === 'surplus'
+          ? `+${energyBalance.absoluteBalanceKcal}`
+          : '≈0';
+
+  $('energyBalanceDetail').textContent =
+    !energyBalance.available
+      ? 'esperant tendència'
+      : `kcal/dia · ${energyBalance.confidence === 'medium' ? 'confiança mitjana' : 'confiança baixa'}`;
+
+  $('burnToday').textContent =
+    snapshot.movement.steps != null
+      ? Math.round(snapshot.movement.steps).toLocaleString('ca-ES')
+      : '—';
+
+  $('burnSourceToday').textContent =
+    snapshot.movement.steps != null
+      ? snapshot.movement.stepsSource === 'healthkit'
+        ? 'Apple Health'
+        : snapshot.movement.stepsSource || 'registrats'
+      : 'sense dades';
   $('weightDelta').textContent = displayWeight
     ? todayWeight ? `Avui · ${formatDateTime(todayWeight.measuredAt)}` : `Últim: ${formatDateTime(displayWeight.measuredAt)}`
     : 'Sense registres';
   $('weightTrend').textContent = trend == null ? 'Esperant dades' : trend < -0.1 ? 'Tendència positiva' : trend > 0.1 ? 'Tendència a l’alça' : 'Tendència estable';
-  $('recommendation').textContent = decision.title;
-  updateOrbit(state, day, decision);
+  renderDailyBrief(state, snapshot);
 
   $('stepsInput').value = day.steps ?? '';
-  $('intakeInput').value = day.intake ?? '';
   $('activeInput').value = day.active ?? '';
   $('totalInput').value = day.total ?? '';
-  $('nameSetting').value = state.settings.name ?? '';
-  $('ageSetting').value = state.settings.age ?? '';
-  $('heightSetting').value = state.settings.height ?? '';
-  $('sexSetting').value = state.settings.sex ?? 'male';
-  $('goalSetting').value = state.settings.goal ?? '';
-  $('dateSetting').value = state.settings.targetDate ?? '';
+  $('nameSetting').value = state.profile?.displayName ?? '';
+  $('birthDateSetting').value = state.profile?.birthDate ?? '';
+  $('heightSetting').value = state.profile?.heightCm ?? '';
+  $('sexSetting').value = state.profile?.metabolicSex ?? '';
+  $('goalSetting').value =
+    weightGoal?.targetValue ?? '';
+  $('dateSetting').value =
+    weightGoal?.targetDate ?? '';
 
+  renderCheckinPrompt(state, today);
   renderWeightHistory(state);
+  renderWaistHistory(state);
+  renderActivities(state);
   renderRecentDays(state);
 }
 
 export function renderCharts(state) {
-  const weightSeries = dailyWeightSeries(state.weights).slice(-30);
-  const days = state.days.slice(-30);
-  drawChart($('weightChart'), weightSeries.map(record => record.value));
-  drawChart($('calorieChart'), days.map(day => totalIntake(state, day)), days.map(day => totalBurn(state, day)));
+  const history = createHistorySummary(state);
+
+  drawChart(
+    $('weightChart'),
+    history.weight.trendValues,
+    history.weight.trajectoryValues,
+    {
+      labels: history.weight.labels,
+      points: history.weight.values
+    }
+  );
+
+  drawChart(
+    $('stepsChart'),
+    history.steps.values,
+    null,
+    {
+      labels: history.steps.labels,
+      zeroFloor: true
+    }
+  );
+
+  drawChart(
+    $('trainingChart'),
+    history.training.minutesByWeek,
+    null,
+    {
+      labels: history.training.labels,
+      zeroFloor: true
+    }
+  );
+
+  const weightChange =
+    history.weight.start != null &&
+    history.weight.end != null
+      ? history.weight.end -
+        history.weight.start
+      : null;
+
+  $('historyWeightChange').textContent =
+    weightChange == null
+      ? '—'
+      : `${weightChange > 0 ? '+' : ''}${weightChange
+          .toFixed(1)
+          .replace('.', ',')} kg`;
+
+  const deviation =
+    history.weight.trajectoryDeviation;
+
+  const observedRate =
+    history.weight.observedWeeklyRate;
+
+  const requiredRate =
+    history.weight.requiredWeeklyRate;
+
+  let trajectoryText;
+
+  if (deviation == null) {
+    trajectoryText =
+      history.weight.records.length >= 2
+        ? `${history.weight.records.length} registres analitzats`
+        : 'Calen més registres';
+  } else if (Math.abs(deviation) < 0.1) {
+    trajectoryText =
+      'pràcticament sobre la trajectòria objectiu';
+  } else if (deviation > 0) {
+    trajectoryText =
+      `${deviation
+        .toFixed(1)
+        .replace('.', ',')} kg per sobre de la trajectòria`;
+  } else {
+    trajectoryText =
+      `${Math.abs(deviation)
+        .toFixed(1)
+        .replace('.', ',')} kg per davant de la trajectòria`;
+  }
+
+  const formatWeeklyRate = value => {
+    if (value == null) return null;
+
+    const sign =
+      value > 0 ? '+' : value < 0 ? '−' : '';
+
+    return `${sign}${Math.abs(value)
+      .toFixed(2)
+      .replace('.', ',')} kg/setm.`;
+  };
+
+  const rateParts = [];
+
+  if (observedRate != null) {
+    rateParts.push(
+      `observat ${formatWeeklyRate(observedRate)}`
+    );
+  }
+
+  if (requiredRate != null) {
+    rateParts.push(
+      `necessari ${formatWeeklyRate(requiredRate)}`
+    );
+  }
+
+  $('historyWeightDetail').textContent =
+    rateParts.length
+      ? `${trajectoryText} · ${rateParts.join(' · ')}`
+      : trajectoryText;
+
+  $('historyStepsAverage').textContent =
+    history.steps.average == null
+      ? '—'
+      : Math.round(
+          history.steps.average
+        ).toLocaleString('ca-ES');
+
+  $('historyStepsCoverage').textContent =
+    history.steps.coverage
+      ? `mitjana dels ${history.steps.coverage} dies amb dades · cobertura ${history.steps.coverage}/14`
+      : 'Encara no hi ha dades automàtiques';
+
+  $('historyTrainingTotal').textContent =
+    history.training.totalSessions
+      ? `${history.training.totalSessions} sessions`
+      : '—';
+
+  $('historyTrainingDetail').textContent =
+    history.training.totalSessions
+      ? `${Math.round(history.training.totalMinutes)} min en 4 setmanes`
+      : 'Sense entrenaments en el període';
 }
 
 export function openScreen(screenId) {

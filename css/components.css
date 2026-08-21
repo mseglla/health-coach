@@ -88,3 +88,244 @@
 .auth-account-email strong { color: var(--color-text); overflow-wrap: anywhere; }
 .button--text { min-height: 40px; color: var(--color-muted); background: transparent; }
 .button:disabled { cursor: wait; opacity: .55; }
+
+
+.energy-status-card {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.energy-status-card__header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.energy-status-card__header h2 {
+  margin: 0.2rem 0 0;
+}
+
+.energy-status-card__value {
+  font-size: clamp(2rem, 6vw, 3.2rem);
+  line-height: 1;
+  text-align: right;
+}
+
+.energy-status-card__detail {
+  margin: 0;
+  color: var(--text-muted);
+}
+
+
+.checkin-card {
+  display: grid;
+  gap: 1rem;
+}
+
+.checkin-card h2 {
+  margin: 0.2rem 0 0;
+}
+
+.checkin-card__hint {
+  margin: 0.35rem 0 0;
+  color: var(--text-muted);
+}
+
+.checkin-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.checkin-note summary {
+  cursor: pointer;
+  color: var(--text-muted);
+}
+
+.checkin-note .field {
+  margin-top: 0.75rem;
+}
+
+.checkin-note textarea {
+  width: 100%;
+  resize: vertical;
+}
+
+
+.daily-brief-card {
+  display: grid;
+  gap: 1.25rem;
+}
+
+.daily-brief-card__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.daily-brief-card__header h2 {
+  margin: 0.25rem 0 0;
+  font-size: clamp(1.8rem, 4vw, 2.8rem);
+  line-height: 1.05;
+}
+
+.daily-brief-card__summary {
+  margin: 0;
+  max-width: 58rem;
+  color: var(--text-muted);
+  font-size: 1.05rem;
+  line-height: 1.5;
+}
+
+.daily-evidence {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.daily-evidence__item {
+  display: grid;
+  gap: 0.3rem;
+  padding: 0.9rem 1rem;
+  border: 1px solid var(--border);
+  border-radius: 1rem;
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.daily-evidence__item span {
+  color: var(--text-muted);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+}
+
+.daily-evidence__item strong {
+  font-size: 1rem;
+  line-height: 1.3;
+}
+
+.daily-action {
+  display: grid;
+  gap: 0.4rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border);
+}
+
+.daily-action__label {
+  color: var(--accent);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+}
+
+.daily-action strong {
+  max-width: 58rem;
+  font-size: 1.15rem;
+  line-height: 1.4;
+}
+
+@media (max-width: 700px) {
+  .daily-evidence {
+    grid-template-columns: 1fr;
+  }
+
+  .daily-brief-card__header {
+    flex-direction: column;
+  }
+}
+
+
+.progress-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.progress-summary-card {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.progress-summary-card strong {
+  font-size: clamp(1.8rem, 4vw, 2.6rem);
+  line-height: 1;
+}
+
+.progress-summary-card small {
+  color: var(--text-muted);
+}
+
+@media (max-width: 700px) {
+  .progress-summary-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+
+.chart-legend__point {
+  display: inline-block;
+  width: 0.45rem;
+  height: 0.45rem;
+  margin-left: 0.35rem;
+  border-radius: 50%;
+  background: var(--text-muted);
+  vertical-align: middle;
+}
+
+
+.quick-log-card {
+  display: grid;
+  gap: 1rem;
+}
+
+.quick-log-card h2 {
+  margin: 0.25rem 0 0;
+}
+
+.quick-log-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.quick-log-action {
+  display: grid;
+  gap: 0.25rem;
+  min-height: 7rem;
+  padding: 1rem;
+  text-align: left;
+  border: 1px solid var(--border);
+  border-radius: 1rem;
+  background: rgba(255, 255, 255, 0.025);
+  color: inherit;
+  cursor: pointer;
+}
+
+.quick-log-action:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.quick-log-action > span {
+  font-size: 1.5rem;
+}
+
+.quick-log-action strong {
+  font-size: 1.1rem;
+}
+
+.quick-log-action small {
+  color: var(--text-muted);
+}
+
+.quick-log-fallback {
+  justify-self: start;
+  width: auto;
+}
+
+@media (max-width: 560px) {
+  .quick-log-actions {
+    grid-template-columns: 1fr 1fr;
+  }
+}
