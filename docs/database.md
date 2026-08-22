@@ -134,11 +134,16 @@ Separar aquesta taula de `daily_summaries` evita barrejar el resum manual d’AT
 - `updated_at timestamptz`
 - `deleted_at timestamptz null`
 
-Tipus admesos en el pilot:
+Tipus admesos:
 
 - `steps`
+- `distance_m`
 - `active_kcal`
+- `resting_kcal`
 - `total_kcal`
+- `heart_rate_avg_bpm`
+- `heart_rate_min_bpm`
+- `heart_rate_max_bpm`
 
 Identitat lògica i deduplicació:
 
