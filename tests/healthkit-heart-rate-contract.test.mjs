@@ -11,6 +11,11 @@ const migration = readFileSync(
   'utf8'
 );
 
+const backgroundCoordinator = readFileSync(
+  'ios/ATLESConnector/ATLESConnector/BackgroundSyncCoordinator.swift',
+  'utf8'
+);
+
 for (const metricType of [
   'heart_rate_avg_bpm',
   'heart_rate_min_bpm',
@@ -29,6 +34,26 @@ assert.match(swift, /\.discreteAverage/);
 assert.match(swift, /\.discreteMin/);
 assert.match(swift, /\.discreteMax/);
 assert.match(swift, /unit: "bpm"/);
+assert.match(
+  swift,
+  /onHeartRateChanged: @escaping \(\) async -> Void/
+);
+assert.match(
+  swift,
+  /quantityType\(forIdentifier: \.heartRate\),\s*\.hourly/
+);
+assert.match(
+  swift,
+  /await onHeartRateChanged\(\)/
+);
+assert.match(
+  backgroundCoordinator,
+  /onHeartRateChanged:/
+);
+assert.match(
+  backgroundCoordinator,
+  /await self\?\.syncDailyMetrics\(\)/
+);
 
 console.log(
   'PASS — contracte diari de freqüència cardíaca coherent'

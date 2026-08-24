@@ -115,6 +115,10 @@ final class HealthKitManager: ObservableObject {
                 .hourly
             ),
             (
+                HKObjectType.quantityType(forIdentifier: .heartRate),
+                .hourly
+            ),
+            (
                 HKObjectType.workoutType(),
                 .immediate
             )
@@ -140,6 +144,7 @@ final class HealthKitManager: ObservableObject {
 
     func startObservers(
         onStepsChanged: @escaping () async -> Void,
+        onHeartRateChanged: @escaping () async -> Void,
         onWorkoutsChanged: @escaping () async -> Void
     ) {
         if let stepType = HKObjectType.quantityType(
@@ -161,6 +166,27 @@ final class HealthKitManager: ObservableObject {
             }
 
             healthStore.execute(stepObserver)
+        }
+
+        if let heartRateType = HKObjectType.quantityType(
+            forIdentifier: .heartRate
+        ) {
+            let heartRateObserver = HKObserverQuery(
+                sampleType: heartRateType,
+                predicate: nil
+            ) { _, completionHandler, error in
+                guard error == nil else {
+                    completionHandler()
+                    return
+                }
+
+                Task {
+                    await onHeartRateChanged()
+                    completionHandler()
+                }
+            }
+
+            healthStore.execute(heartRateObserver)
         }
 
         let workoutObserver = HKObserverQuery(
