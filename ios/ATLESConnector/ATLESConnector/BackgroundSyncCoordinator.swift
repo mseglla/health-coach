@@ -13,7 +13,10 @@ final class BackgroundSyncCoordinator {
     func start() {
         healthKit.startObservers(
             onStepsChanged: { [weak self] in
-                await self?.syncSteps()
+                await self?.syncDailyMetrics()
+            },
+            onHeartRateChanged: { [weak self] in
+                await self?.syncDailyMetrics()
             },
             onWorkoutsChanged: { [weak self] in
                 await self?.syncWorkouts()
@@ -36,7 +39,7 @@ final class BackgroundSyncCoordinator {
         return (userId, accessToken)
     }
 
-    private func syncSteps() async {
+    private func syncDailyMetrics() async {
         guard let session = await prepareSession() else {
             return
         }

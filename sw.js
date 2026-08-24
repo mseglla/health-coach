@@ -1,4 +1,4 @@
-const CACHE = 'health-coach-v28';
+const CACHE = 'health-coach-v37';
 const ASSETS = [
   './', './index.html', './manifest.webmanifest', './assets/icon.svg',
   './css/tokens.css', './css/base.css', './css/components.css', './css/screens.css',
@@ -7,6 +7,8 @@ const ASSETS = [
   './js/calculations.js',
   './js/daily-snapshot.js', './js/daily-insight.js',
   './js/history-summary.js',
+  './js/history-periods.js',
+  './js/personal-records.js',
   './js/coach.js', './js/charts.js', './js/ui.js',
   './js/weight-repository.js', './js/supabase-weight-repository.js',
   './js/supabase-daily-summary-repository.js',

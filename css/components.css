@@ -181,7 +181,7 @@
 
 .daily-evidence {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 0.75rem;
 }
 
@@ -233,33 +233,6 @@
 
   .daily-brief-card__header {
     flex-direction: column;
-  }
-}
-
-
-.progress-summary-grid {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 1rem;
-}
-
-.progress-summary-card {
-  display: grid;
-  gap: 0.45rem;
-}
-
-.progress-summary-card strong {
-  font-size: clamp(1.8rem, 4vw, 2.6rem);
-  line-height: 1;
-}
-
-.progress-summary-card small {
-  color: var(--text-muted);
-}
-
-@media (max-width: 700px) {
-  .progress-summary-grid {
-    grid-template-columns: 1fr;
   }
 }
 
@@ -328,4 +301,320 @@
   .quick-log-actions {
     grid-template-columns: 1fr 1fr;
   }
+}
+
+.history-period-selector {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.history-period-selector__options {
+  display: flex;
+  gap: 0.4rem;
+  max-width: 100%;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.history-period-selector__options::-webkit-scrollbar {
+  display: none;
+}
+
+.history-period-selector button {
+  flex: 0 0 auto;
+  min-width: 2.9rem;
+  min-height: 2.5rem;
+  padding: 0 0.75rem;
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  color: var(--color-muted);
+  background: rgba(255, 255, 255, 0.04);
+  font: inherit;
+  font-size: 0.75rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.history-period-selector button.is-active {
+  border-color: var(--color-primary);
+  color: #10150b;
+  background: var(--color-primary);
+}
+
+@media (max-width: 700px) {
+  .history-period-selector {
+    align-items: stretch;
+    flex-direction: column;
+  }
+}
+
+.chart-card__actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.8rem;
+}
+
+.chart-legend--simple {
+  white-space: nowrap;
+}
+
+@media (max-width: 700px) {
+  .chart-card__actions {
+    align-items: flex-end;
+    flex-direction: column-reverse;
+    gap: 0.4rem;
+  }
+}
+
+.trend-indicator {
+  flex: 0 0 auto;
+  padding: 0.32rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  line-height: 1;
+}
+
+.trend-indicator--positive {
+  color: var(--color-success);
+  background: rgba(88, 230, 169, 0.13);
+}
+
+.trend-indicator--negative {
+  color: var(--color-danger);
+  background: rgba(255, 95, 122, 0.14);
+}
+
+.trend-indicator--neutral {
+  color: var(--color-muted);
+  background: rgba(144, 153, 173, 0.12);
+}
+
+.record-progress {
+  overflow: hidden;
+  height: 0.35rem;
+  margin-top: 0.15rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.record-progress span {
+  display: block;
+  width: 0;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(
+    90deg,
+    var(--color-primary),
+    var(--color-success)
+  );
+  transition: width var(--motion-base);
+}
+
+.progress-kpi-strip {
+  display: grid;
+  grid-template-columns:
+    repeat(4, minmax(0, 1fr));
+  overflow: hidden;
+  padding: 0;
+}
+
+.progress-kpi {
+  display: grid;
+  min-width: 0;
+  gap: 0.45rem;
+  padding: 1rem 1.15rem;
+}
+
+.progress-kpi + .progress-kpi {
+  border-left: 1px solid var(--color-border);
+}
+
+.progress-kpi__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  color: var(--color-primary);
+  font-size: 0.7rem;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+}
+
+.progress-kpi strong {
+  overflow: hidden;
+  font-size: clamp(1.7rem, 3.4vw, 2.65rem);
+  line-height: 1;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.progress-kpi small {
+  overflow: hidden;
+  color: var(--color-muted);
+  font-size: 0.76rem;
+  line-height: 1.25;
+  text-overflow: ellipsis;
+}
+
+.history-period-selector {
+  padding: 0.8rem 1rem;
+}
+
+.records-strip {
+  padding: 1rem 1.15rem;
+}
+
+.records-strip > .section-kicker {
+  margin-bottom: 0.8rem;
+}
+
+.records-strip__grid {
+  display: grid;
+  grid-template-columns:
+    repeat(4, minmax(0, 1fr));
+}
+
+.record-compact {
+  display: grid;
+  min-width: 0;
+  gap: 0.38rem;
+  padding: 0 1rem;
+}
+
+.record-compact:first-child {
+  padding-left: 0;
+}
+
+.record-compact:last-child {
+  padding-right: 0;
+}
+
+.record-compact + .record-compact {
+  border-left: 1px solid var(--color-border);
+}
+
+.record-compact > span {
+  color: var(--color-muted);
+  font-size: 0.68rem;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+}
+
+.record-compact > strong {
+  display: flex;
+  align-items: baseline;
+  overflow: hidden;
+  gap: 0.2rem;
+  font-size: clamp(1.45rem, 2.8vw, 2.2rem);
+  line-height: 1.05;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.record-compact > strong b {
+  font: inherit;
+}
+
+.record-compact > strong i,
+.record-compact > strong em {
+  color: var(--color-muted);
+  font-size: 0.62em;
+  font-style: normal;
+  font-weight: 700;
+}
+
+.record-compact > small {
+  overflow: hidden;
+  color: var(--color-muted);
+  font-size: 0.7rem;
+  line-height: 1.2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.record-compact .record-progress__labels {
+  margin-top: 0.1rem;
+  font-size: 0.62rem;
+}
+
+.record-compact .record-progress__labels b {
+  font-size: 0.72rem;
+}
+
+.record-compact .record-progress {
+  height: 0.25rem;
+}
+
+@media (max-width: 700px) {
+  .progress-kpi-strip,
+  .records-strip__grid {
+    grid-template-columns:
+      repeat(2, minmax(0, 1fr));
+  }
+
+  .progress-kpi:nth-child(odd),
+  .record-compact:nth-child(odd) {
+    border-left: 0;
+  }
+
+  .progress-kpi:nth-child(n + 3),
+  .record-compact:nth-child(n + 3) {
+    border-top: 1px solid var(--color-border);
+  }
+
+  .record-compact {
+    padding: 0.9rem;
+  }
+
+  .record-compact:first-child {
+    padding-left: 0.9rem;
+  }
+
+  .record-compact:last-child {
+    padding-right: 0.9rem;
+  }
+}
+
+@media (max-width: 390px) {
+  .progress-kpi {
+    padding: 0.85rem;
+  }
+
+  .progress-kpi strong {
+    font-size: 1.65rem;
+  }
+
+  .trend-indicator {
+    padding: 0.28rem 0.4rem;
+    font-size: 0.62rem;
+  }
+
+  .record-compact > strong {
+    font-size: 1.4rem;
+  }
+}
+
+.visually-hidden {
+  position: absolute !important;
+  overflow: hidden;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  border: 0;
+  margin: -1px;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+#stats .screen-header {
+  margin-bottom: 0.75rem;
+}
+
+#stats .screen-header h1 {
+  margin: 0;
 }
