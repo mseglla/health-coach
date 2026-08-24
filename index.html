@@ -339,22 +339,41 @@
 
         <section class="progress-summary-grid">
           <article class="surface-card progress-summary-card">
-            <span class="section-kicker">PES · 30 DIES</span>
+            <span class="section-kicker">PES · <span id="historyWeightPeriod">14 DIES</span></span>
             <strong id="historyWeightChange">—</strong>
             <small id="historyWeightDetail">Esperant dades</small>
           </article>
 
           <article class="surface-card progress-summary-card">
-            <span class="section-kicker">PASSOS · 14 DIES</span>
+            <span class="section-kicker">PASSOS · <span id="historyStepsPeriod">14 DIES</span></span>
             <strong id="historyStepsAverage">—</strong>
             <small id="historyStepsCoverage">Esperant Apple Health</small>
           </article>
 
           <article class="surface-card progress-summary-card">
-            <span class="section-kicker">ENTRENAMENT · 4 SETMANES</span>
+            <span class="section-kicker">POLS OBSERVAT · <span id="historyHeartRatePeriod">14 DIES</span></span>
+            <strong id="historyHeartRateAverage">—</strong>
+            <small id="historyHeartRateCoverage">Esperant Apple Health</small>
+          </article>
+
+          <article class="surface-card progress-summary-card">
+            <span class="section-kicker">ENTRENAMENT · <span id="historyTrainingPeriod">14 DIES</span></span>
             <strong id="historyTrainingTotal">—</strong>
             <small id="historyTrainingDetail">Sense entrenaments</small>
           </article>
+        </section>
+
+        <section class="surface-card history-period-selector">
+          <span class="section-kicker">PERÍODE DE L’EVOLUCIÓ</span>
+          <div class="history-period-selector__options" role="group" aria-label="Període de totes les gràfiques d’evolució">
+            <button type="button" data-history-period="7d">7D</button>
+            <button type="button" data-history-period="14d" class="is-active" aria-pressed="true">14D</button>
+            <button type="button" data-history-period="30d">30D</button>
+            <button type="button" data-history-period="3m">3M</button>
+            <button type="button" data-history-period="6m">6M</button>
+            <button type="button" data-history-period="1y">1A</button>
+            <button type="button" data-history-period="all">TOT</button>
+          </div>
         </section>
 
         <section class="surface-card chart-card">
@@ -378,9 +397,20 @@
               <span class="section-kicker">MOVIMENT</span>
               <h2>Passos</h2>
             </div>
-            <span class="chip">14 dies</span>
+            <span class="chip" id="stepsPeriodChip">14D</span>
           </div>
           <canvas id="stepsChart" width="720" height="300"></canvas>
+        </section>
+
+        <section class="surface-card chart-card">
+          <div class="section-title-row">
+            <div>
+              <span class="section-kicker">COR · MOSTRES OBSERVADES</span>
+              <h2>Freqüència cardíaca mitjana</h2>
+            </div>
+            <span class="chip" id="heartRatePeriodChip">14D</span>
+          </div>
+          <canvas id="heartRateChart" width="720" height="300"></canvas>
         </section>
 
         <section class="surface-card chart-card">
@@ -389,7 +419,7 @@
               <span class="section-kicker">CÀRREGA REALITZADA</span>
               <h2>Temps d'entrenament</h2>
             </div>
-            <span class="chip">4 setmanes</span>
+            <span class="chip" id="trainingPeriodChip">14D</span>
           </div>
           <canvas id="trainingChart" width="720" height="300"></canvas>
         </section>

@@ -124,6 +124,29 @@ function drawPoints(
   context.restore();
 }
 
+export function chartTickIndexes(
+  labelCount,
+  width
+) {
+  const maxTicks =
+    width < 520 ? 3 : 5;
+
+  const tickCount = Math.min(
+    maxTicks,
+    labelCount
+  );
+
+  return Array.from(
+    { length: tickCount },
+    (_, tick) =>
+      Math.round(
+        tick *
+        (labelCount - 1) /
+        Math.max(1, tickCount - 1)
+      )
+  );
+}
+
 function drawXAxis(
   context,
   labels,
@@ -132,19 +155,9 @@ function drawXAxis(
 ) {
   if (!labels?.length) return;
 
-  const tickCount = Math.min(
-    5,
-    labels.length
-  );
-
-  const indexes = Array.from(
-    { length: tickCount },
-    (_, tick) =>
-      Math.round(
-        tick *
-        (labels.length - 1) /
-        Math.max(1, tickCount - 1)
-      )
+  const indexes = chartTickIndexes(
+    labels.length,
+    bounds.width
   );
 
   context.save();

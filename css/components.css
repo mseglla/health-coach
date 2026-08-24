@@ -181,7 +181,7 @@
 
 .daily-evidence {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 0.75rem;
 }
 
@@ -327,5 +327,52 @@
 @media (max-width: 560px) {
   .quick-log-actions {
     grid-template-columns: 1fr 1fr;
+  }
+}
+
+.history-period-selector {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.history-period-selector__options {
+  display: flex;
+  gap: 0.4rem;
+  max-width: 100%;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.history-period-selector__options::-webkit-scrollbar {
+  display: none;
+}
+
+.history-period-selector button {
+  flex: 0 0 auto;
+  min-width: 2.9rem;
+  min-height: 2.5rem;
+  padding: 0 0.75rem;
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  color: var(--color-muted);
+  background: rgba(255, 255, 255, 0.04);
+  font: inherit;
+  font-size: 0.75rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.history-period-selector button.is-active {
+  border-color: var(--color-primary);
+  color: #10150b;
+  background: var(--color-primary);
+}
+
+@media (max-width: 700px) {
+  .history-period-selector {
+    align-items: stretch;
+    flex-direction: column;
   }
 }

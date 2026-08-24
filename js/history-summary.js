@@ -4,13 +4,11 @@ import {
   localDateISO,
   recordDate
 } from './calculations.js';
-
-function dateOffset(days) {
-  const date = new Date();
-  date.setHours(12, 0, 0, 0);
-  date.setDate(date.getDate() - days);
-  return localDateISO(date);
-}
+import {
+  createDailyMetricHistory,
+  getHistoryPeriod,
+  historyStartForDates
+} from './history-periods.js';
 
 function formatShortDate(dateString) {
   if (!dateString) return '';
@@ -19,37 +17,6 @@ function formatShortDate(dateString) {
     day: 'numeric',
     month: 'short'
   }).format(new Date(`${dateString}T12:00:00`));
-}
-
-function metricByDate(state, type, days) {
-  const start = dateOffset(days - 1);
-  const map = new Map();
-
-  (state.healthMetrics || [])
-    .filter(metric =>
-      metric.type === type &&
-      metric.date >= start
-    )
-    .forEach(metric => {
-      const previous = map.get(metric.date);
-
-      if (
-        !previous ||
-        String(metric.importedAt || '') >
-          String(previous.importedAt || '')
-      ) {
-        map.set(metric.date, metric);
-      }
-    });
-
-  return map;
-}
-
-function dateRange(days) {
-  return Array.from(
-    { length: days },
-    (_, index) => dateOffset(days - 1 - index)
-  );
 }
 
 function getWeightGoal(state) {
@@ -126,54 +93,252 @@ function rollingWeightTrend(records, windowSize = 7) {
   });
 }
 
-function buildTrainingWeeks(state) {
-  const today = new Date();
-  today.setHours(12, 0, 0, 0);
-
-  const weeks = [];
-
-  for (let index = 3; index >= 0; index -= 1) {
-    const end = new Date(today);
-    end.setDate(end.getDate() - index * 7);
-
-    const start = new Date(end);
-    start.setDate(start.getDate() - 6);
-
-    weeks.push({
-      start: localDateISO(start),
-      end: localDateISO(end),
-      minutes: 0,
-      sessions: 0
-    });
-  }
-
-  (state.activities || [])
-    .filter(activity => !activity.deletedAt)
-    .forEach(activity => {
-      const date =
-        recordDate(activity.startedAt);
-
-      const week = weeks.find(
-        item =>
-          date >= item.start &&
-          date <= item.end
-      );
-
-      if (!week) return;
-
-      week.sessions += 1;
-      week.minutes +=
-        Number(activity.durationMinutes) || 0;
-    });
-
-  return weeks;
+function dateAtNoon(dateString) {
+  return new Date(
+    `${dateString}T12:00:00`
+  );
 }
 
-export function createHistorySummary(state) {
-  const weightSeries =
+function addDays(date, days) {
+  const result = new Date(date);
+  result.setDate(
+    result.getDate() + days
+  );
+  return result;
+}
+
+function formatMonthLabel(
+  dateString,
+  includeYear
+) {
+  return new Intl.DateTimeFormat(
+    'ca-ES',
+    {
+      month: 'short',
+      ...(includeYear
+        ? { year: '2-digit' }
+        : {})
+    }
+  ).format(
+    dateAtNoon(dateString)
+  );
+}
+
+function buildTrainingPeriod(
+  state,
+  periodKey
+) {
+  const activities =
+    (state.activities || [])
+      .filter(
+        activity => !activity.deletedAt
+      );
+
+  const activityDates =
+    activities.map(
+      activity =>
+        recordDate(activity.startedAt)
+    );
+
+  const startDate =
+    historyStartForDates(
+      periodKey,
+      activityDates
+    );
+
+  const endDate =
+    localDateISO();
+
+  const period =
+    getHistoryPeriod(periodKey);
+
+  const buckets = [];
+
+  if (period.mode === 'daily') {
+    for (
+      let cursor = dateAtNoon(startDate);
+      cursor <= dateAtNoon(endDate);
+      cursor = addDays(cursor, 1)
+    ) {
+      const date = localDateISO(cursor);
+
+      buckets.push({
+        start: date,
+        end: date,
+        label: formatShortDate(date),
+        minutes: 0,
+        sessions: 0
+      });
+    }
+  } else if (period.mode === 'weekly') {
+    const finalDate =
+      dateAtNoon(endDate);
+
+    for (
+      let cursor = dateAtNoon(startDate);
+      cursor <= finalDate;
+      cursor = addDays(cursor, 7)
+    ) {
+      const bucketStart =
+        localDateISO(cursor);
+
+      const bucketEnd =
+        localDateISO(
+          new Date(
+            Math.min(
+              addDays(cursor, 6).getTime(),
+              finalDate.getTime()
+            )
+          )
+        );
+
+      buckets.push({
+        start: bucketStart,
+        end: bucketEnd,
+        label:
+          formatShortDate(bucketStart),
+        minutes: 0,
+        sessions: 0
+      });
+    }
+  } else {
+    const first =
+      dateAtNoon(startDate);
+
+    first.setDate(1);
+
+    const finalDate =
+      dateAtNoon(endDate);
+
+    for (
+      let cursor = first;
+      cursor <= finalDate;
+      cursor = (() => {
+        const next = new Date(cursor);
+        next.setMonth(
+          next.getMonth() + 1
+        );
+        return next;
+      })()
+    ) {
+      const monthStart =
+        localDateISO(cursor);
+
+      const nextMonth =
+        new Date(cursor);
+
+      nextMonth.setMonth(
+        nextMonth.getMonth() + 1
+      );
+
+      const monthEnd =
+        localDateISO(
+          addDays(nextMonth, -1)
+        );
+
+      buckets.push({
+        start:
+          monthStart < startDate
+            ? startDate
+            : monthStart,
+        end:
+          monthEnd > endDate
+            ? endDate
+            : monthEnd,
+        label: formatMonthLabel(
+          monthStart,
+          period.all
+        ),
+        minutes: 0,
+        sessions: 0
+      });
+    }
+  }
+
+  activities.forEach(activity => {
+    const date =
+      recordDate(activity.startedAt);
+
+    if (
+      date < startDate ||
+      date > endDate
+    ) {
+      return;
+    }
+
+    const bucket = buckets.find(
+      item =>
+        date >= item.start &&
+        date <= item.end
+    );
+
+    if (!bucket) return;
+
+    bucket.sessions += 1;
+    bucket.minutes +=
+      Number(
+        activity.durationMinutes
+      ) || 0;
+  });
+
+  return {
+    period,
+    labels:
+      buckets.map(
+        bucket => bucket.label
+      ),
+    sessionsByWeek:
+      buckets.map(
+        bucket => bucket.sessions
+      ),
+    minutesByWeek:
+      buckets.map(
+        bucket => bucket.minutes
+      ),
+    totalSessions:
+      buckets.reduce(
+        (sum, bucket) =>
+          sum + bucket.sessions,
+        0
+      ),
+    totalMinutes:
+      buckets.reduce(
+        (sum, bucket) =>
+          sum + bucket.minutes,
+        0
+      )
+  };
+}
+
+export function createHistorySummary(
+  state,
+  {
+    historyPeriod = '14d'
+  } = {}
+) {
+  const allWeightSeries =
     dailyWeightSeries(
       state.weights || []
-    ).slice(-30);
+    );
+
+  const weightStartDate =
+    historyStartForDates(
+      historyPeriod,
+      allWeightSeries.map(
+        record =>
+          recordDate(
+            record.measuredAt
+          )
+      )
+    );
+
+  const weightSeries =
+    allWeightSeries.filter(
+      record =>
+        recordDate(
+          record.measuredAt
+        ) >= weightStartDate
+    );
 
   const weightGoal =
     getWeightGoal(state);
@@ -259,38 +424,31 @@ export function createHistorySummary(state) {
     }
   }
 
-  const stepDates =
-    dateRange(14);
-
-  const stepMap =
-    metricByDate(
-      state,
-      'steps',
-      14
+  const stepsHistory =
+    createDailyMetricHistory(
+      state.healthMetrics || [],
+      {
+        valueType: 'steps',
+        periodKey: historyPeriod
+      }
     );
 
-  const stepValues =
-    stepDates.map(
-      date =>
-        stepMap.get(date)?.value ?? null
+  const heartRateHistory =
+    createDailyMetricHistory(
+      state.healthMetrics || [],
+      {
+        valueType: 'heart_rate_avg_bpm',
+        minType: 'heart_rate_min_bpm',
+        maxType: 'heart_rate_max_bpm',
+        periodKey: historyPeriod
+      }
     );
-
-  const availableSteps =
-    stepValues.filter(
-      value => value != null
-    );
-
-  const averageSteps =
-    availableSteps.length
-      ? availableSteps.reduce(
-          (sum, value) =>
-            sum + Number(value),
-          0
-        ) / availableSteps.length
-      : null;
 
   const weeks =
-    buildTrainingWeeks(state);
+    buildTrainingPeriod(
+      state,
+      historyPeriod
+    );
 
   return {
     weight: {
@@ -311,41 +469,10 @@ export function createHistorySummary(state) {
       requiredWeeklyRate
     },
 
-    steps: {
-      dates: stepDates,
-      labels:
-        stepDates.map(formatShortDate),
-      values: stepValues,
-      average: averageSteps,
-      coverage:
-        availableSteps.length
-    },
+    steps: stepsHistory,
 
-    training: {
-      labels: weeks.map(
-        week =>
-          `${formatShortDate(week.start)}–${formatShortDate(week.end)}`
-      ),
-      sessionsByWeek:
-        weeks.map(
-          week => week.sessions
-        ),
-      minutesByWeek:
-        weeks.map(
-          week => week.minutes
-        ),
-      totalSessions:
-        weeks.reduce(
-          (sum, week) =>
-            sum + week.sessions,
-          0
-        ),
-      totalMinutes:
-        weeks.reduce(
-          (sum, week) =>
-            sum + week.minutes,
-          0
-        )
-    }
+    heartRate: heartRateHistory,
+
+    training: weeks
   };
 }

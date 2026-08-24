@@ -21,6 +21,8 @@ import { createHistorySummary } from './history-summary.js';
 
 export const $ = id => document.getElementById(id);
 
+let activeHistoryPeriod = '14d';
+
 export function showToast(message) {
   const toast = $('toast');
   toast.textContent = message;
@@ -373,7 +375,40 @@ export function renderApp(state, today) {
 }
 
 export function renderCharts(state) {
-  const history = createHistorySummary(state);
+  const history = createHistorySummary(
+    state,
+    {
+      historyPeriod:
+        activeHistoryPeriod
+    }
+  );
+
+  document
+    .querySelectorAll(
+      '[data-history-period]'
+    )
+    .forEach(button => {
+      const isActive =
+        button.dataset.historyPeriod ===
+        activeHistoryPeriod;
+
+      button.classList.toggle(
+        'is-active',
+        isActive
+      );
+
+      button.setAttribute(
+        'aria-pressed',
+        String(isActive)
+      );
+
+      button.onclick = () => {
+        activeHistoryPeriod =
+          button.dataset.historyPeriod;
+
+        renderCharts(state);
+      };
+    });
 
   drawChart(
     $('weightChart'),
@@ -396,6 +431,15 @@ export function renderCharts(state) {
   );
 
   drawChart(
+    $('heartRateChart'),
+    history.heartRate.values,
+    null,
+    {
+      labels: history.heartRate.labels
+    }
+  );
+
+  drawChart(
     $('trainingChart'),
     history.training.minutesByWeek,
     null,
@@ -404,6 +448,15 @@ export function renderCharts(state) {
       zeroFloor: true
     }
   );
+
+  $('historyWeightPeriod').textContent =
+    history.steps.period.title.toUpperCase();
+
+  $('historyTrainingPeriod').textContent =
+    history.training.period.title.toUpperCase();
+
+  $('trainingPeriodChip').textContent =
+    history.training.period.label;
 
   const weightChange =
     history.weight.start != null &&
@@ -480,6 +533,18 @@ export function renderCharts(state) {
       ? `${trajectoryText} · ${rateParts.join(' · ')}`
       : trajectoryText;
 
+  $('historyStepsPeriod').textContent =
+    history.steps.period.title.toUpperCase();
+
+  $('stepsPeriodChip').textContent =
+    history.steps.period.label;
+
+  $('historyHeartRatePeriod').textContent =
+    history.heartRate.period.title.toUpperCase();
+
+  $('heartRatePeriodChip').textContent =
+    history.heartRate.period.label;
+
   $('historyStepsAverage').textContent =
     history.steps.average == null
       ? '—'
@@ -489,7 +554,33 @@ export function renderCharts(state) {
 
   $('historyStepsCoverage').textContent =
     history.steps.coverage
-      ? `mitjana dels ${history.steps.coverage} dies amb dades · cobertura ${history.steps.coverage}/14`
+      ? `mitjana de ${history.steps.coverage} dies · cobertura ${history.steps.coverage}/${history.steps.expectedDays}`
+      : 'Encara no hi ha dades automàtiques';
+
+  $('historyHeartRateAverage').textContent =
+    history.heartRate.average == null
+      ? '—'
+      : `${Math.round(history.heartRate.average)} bpm`;
+
+  const heartRateMinimum =
+    history.heartRate.observedMin == null
+      ? null
+      : Math.round(
+          history.heartRate.observedMin
+        );
+
+  const heartRateMaximum =
+    history.heartRate.observedMax == null
+      ? null
+      : Math.round(
+          history.heartRate.observedMax
+        );
+
+  $('historyHeartRateCoverage').textContent =
+    history.heartRate.coverage &&
+    heartRateMinimum != null &&
+    heartRateMaximum != null
+      ? `mínim ${heartRateMinimum} bpm · màxim ${heartRateMaximum} bpm · ${history.heartRate.coverage} dies amb dades`
       : 'Encara no hi ha dades automàtiques';
 
   $('historyTrainingTotal').textContent =
