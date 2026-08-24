@@ -63,11 +63,21 @@ Camps mínims:
 - `imported_at`
 - timestamps comuns
 
-Valors inicials de `metric_type`:
+Valors admesos de `metric_type`:
 
 - `steps`
+- `distance_m`
 - `active_kcal`
+- `resting_kcal`
 - `total_kcal`
+- `heart_rate_avg_bpm`
+- `heart_rate_min_bpm`
+- `heart_rate_max_bpm`
+
+Les mètriques de freqüència cardíaca representen la mitjana,
+el mínim i el màxim de les mostres observades per HealthKit durant
+el dia. No representen un monitoratge continu de 24 hores ni la
+freqüència cardíaca en repòs.
 
 Regles:
 

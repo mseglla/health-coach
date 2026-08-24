@@ -115,6 +115,10 @@ final class HealthKitManager: ObservableObject {
                 .hourly
             ),
             (
+                HKObjectType.quantityType(forIdentifier: .heartRate),
+                .hourly
+            ),
+            (
                 HKObjectType.workoutType(),
                 .immediate
             )
@@ -140,6 +144,7 @@ final class HealthKitManager: ObservableObject {
 
     func startObservers(
         onStepsChanged: @escaping () async -> Void,
+        onHeartRateChanged: @escaping () async -> Void,
         onWorkoutsChanged: @escaping () async -> Void
     ) {
         if let stepType = HKObjectType.quantityType(
@@ -161,6 +166,27 @@ final class HealthKitManager: ObservableObject {
             }
 
             healthStore.execute(stepObserver)
+        }
+
+        if let heartRateType = HKObjectType.quantityType(
+            forIdentifier: .heartRate
+        ) {
+            let heartRateObserver = HKObserverQuery(
+                sampleType: heartRateType,
+                predicate: nil
+            ) { _, completionHandler, error in
+                guard error == nil else {
+                    completionHandler()
+                    return
+                }
+
+                Task {
+                    await onHeartRateChanged()
+                    completionHandler()
+                }
+            }
+
+            healthStore.execute(heartRateObserver)
         }
 
         let workoutObserver = HKObserverQuery(
@@ -373,6 +399,18 @@ final class HealthKitManager: ObservableObject {
             )
         }
 
+        do {
+            result += try await loadHeartRateHistory(
+                from: startDate,
+                to: endDate
+            )
+        } catch {
+            print(
+                "ATLES HealthKit heart rate failed:",
+                error.localizedDescription
+            )
+        }
+
         var activeMetrics: [DailyHealthMetric] = []
 
         do {
@@ -429,6 +467,56 @@ final class HealthKitManager: ObservableObject {
 
             return $0.date < $1.date
         }
+    }
+
+    private func loadHeartRateHistory(
+        from startDate: Date?,
+        to endDate: Date
+    ) async throws -> [DailyHealthMetric] {
+        guard let quantityType =
+            HKQuantityType.quantityType(
+                forIdentifier: .heartRate
+            )
+        else {
+            return []
+        }
+
+        let effectiveStart: Date
+
+        if let startDate {
+            effectiveStart =
+                Calendar.current.startOfDay(
+                    for: startDate
+                )
+        } else {
+            guard let earliestDate =
+                try await earliestSampleDate(
+                    for: quantityType
+                )
+            else {
+                return []
+            }
+
+            effectiveStart =
+                Calendar.current.startOfDay(
+                    for: earliestDate
+                )
+        }
+
+        let effectiveEnd = min(
+            endDate,
+            Date()
+        )
+
+        guard effectiveStart <= effectiveEnd else {
+            return []
+        }
+
+        return try await dailyHeartRateValues(
+            quantityType: quantityType,
+            from: effectiveStart,
+            to: effectiveEnd
+        )
     }
 
     private func loadDistanceHistoryFromSamples(
@@ -717,6 +805,125 @@ final class HealthKitManager: ObservableObject {
 
                 continuation.resume(
                     returning: samples?.first?.startDate
+                )
+            }
+
+            healthStore.execute(query)
+        }
+    }
+
+    private func dailyHeartRateValues(
+        quantityType: HKQuantityType,
+        from startDate: Date,
+        to endDate: Date
+    ) async throws -> [DailyHealthMetric] {
+        let calendar = Calendar.current
+        let anchorDate = calendar.startOfDay(
+            for: startDate
+        )
+
+        let predicate = HKQuery.predicateForSamples(
+            withStart: startDate,
+            end: endDate,
+            options: .strictStartDate
+        )
+
+        let unit = HKUnit.count().unitDivided(
+            by: HKUnit.minute()
+        )
+
+        return try await withCheckedThrowingContinuation {
+            (
+                continuation:
+                CheckedContinuation<
+                    [DailyHealthMetric],
+                    Error
+                >
+            ) in
+
+            let query = HKStatisticsCollectionQuery(
+                quantityType: quantityType,
+                quantitySamplePredicate: predicate,
+                options: [
+                    .discreteAverage,
+                    .discreteMin,
+                    .discreteMax
+                ],
+                anchorDate: anchorDate,
+                intervalComponents: DateComponents(
+                    day: 1
+                )
+            )
+
+            query.initialResultsHandler = {
+                _,
+                collection,
+                error in
+
+                if let error {
+                    continuation.resume(
+                        throwing: error
+                    )
+                    return
+                }
+
+                guard let collection else {
+                    continuation.resume(
+                        returning: []
+                    )
+                    return
+                }
+
+                var result: [DailyHealthMetric] = []
+
+                collection.enumerateStatistics(
+                    from: startDate,
+                    to: endDate
+                ) { statistics, _ in
+                    let values: [
+                        (
+                            metricType: String,
+                            quantity: HKQuantity?
+                        )
+                    ] = [
+                        (
+                            "heart_rate_avg_bpm",
+                            statistics.averageQuantity()
+                        ),
+                        (
+                            "heart_rate_min_bpm",
+                            statistics.minimumQuantity()
+                        ),
+                        (
+                            "heart_rate_max_bpm",
+                            statistics.maximumQuantity()
+                        )
+                    ]
+
+                    for value in values {
+                        guard let quantity = value.quantity else {
+                            continue
+                        }
+
+                        result.append(
+                            DailyHealthMetric(
+                                date: statistics.startDate,
+                                metricType:
+                                    value.metricType,
+                                value: self.rounded(
+                                    quantity.doubleValue(
+                                        for: unit
+                                    ),
+                                    decimalPlaces: 1
+                                ),
+                                unit: "bpm"
+                            )
+                        )
+                    }
+                }
+
+                continuation.resume(
+                    returning: result
                 )
             }
 
