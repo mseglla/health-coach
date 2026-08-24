@@ -328,43 +328,11 @@
 
       <section id="stats" class="screen" aria-labelledby="stats-title">
         <header class="screen-header screen-header--compact">
-          <div>
-            <p class="eyebrow">PROGRÉS</p>
-            <h1 id="stats-title">Evolució</h1>
-            <p class="screen-subtitle">
-              Tendències que expliquen si estàs avançant.
-            </p>
-          </div>
+          <h1 id="stats-title">Evolució</h1>
         </header>
 
-        <section class="progress-summary-grid">
-          <article class="surface-card progress-summary-card">
-            <span class="section-kicker">PES · <span id="historyWeightPeriod">14 DIES</span></span>
-            <strong id="historyWeightChange">—</strong>
-            <small id="historyWeightDetail">Esperant dades</small>
-          </article>
-
-          <article class="surface-card progress-summary-card">
-            <span class="section-kicker">PASSOS · <span id="historyStepsPeriod">14 DIES</span></span>
-            <strong id="historyStepsAverage">—</strong>
-            <small id="historyStepsCoverage">Esperant Apple Health</small>
-          </article>
-
-          <article class="surface-card progress-summary-card">
-            <span class="section-kicker">POLS OBSERVAT · <span id="historyHeartRatePeriod">14 DIES</span></span>
-            <strong id="historyHeartRateAverage">—</strong>
-            <small id="historyHeartRateCoverage">Esperant Apple Health</small>
-          </article>
-
-          <article class="surface-card progress-summary-card">
-            <span class="section-kicker">ENTRENAMENT · <span id="historyTrainingPeriod">14 DIES</span></span>
-            <strong id="historyTrainingTotal">—</strong>
-            <small id="historyTrainingDetail">Sense entrenaments</small>
-          </article>
-        </section>
-
         <section class="surface-card history-period-selector">
-          <span class="section-kicker">PERÍODE DE L’EVOLUCIÓ</span>
+          <span class="section-kicker">PERÍODE</span>
           <div class="history-period-selector__options" role="group" aria-label="Període de totes les gràfiques d’evolució">
             <button type="button" data-history-period="7d">7D</button>
             <button type="button" data-history-period="14d" class="is-active" aria-pressed="true">14D</button>
@@ -373,6 +341,107 @@
             <button type="button" data-history-period="6m">6M</button>
             <button type="button" data-history-period="1y">1A</button>
             <button type="button" data-history-period="all">TOT</button>
+          </div>
+        </section>
+
+        <section class="surface-card progress-kpi-strip" aria-label="Resum del període">
+          <article class="progress-kpi">
+            <div class="progress-kpi__header">
+              <span>PES</span>
+              <span id="historyWeightTrend" class="trend-indicator trend-indicator--neutral">—</span>
+            </div>
+            <strong id="historyWeightChange">—</strong>
+            <small id="historyWeightDetail">Esperant dades</small>
+            <span id="historyWeightPeriod" class="visually-hidden">14 DIES</span>
+          </article>
+
+          <article class="progress-kpi">
+            <div class="progress-kpi__header">
+              <span>PASSOS</span>
+              <span id="historyStepsTrend" class="trend-indicator trend-indicator--neutral">—</span>
+            </div>
+            <strong id="historyStepsAverage">—</strong>
+            <small id="historyStepsCoverage">Esperant dades</small>
+            <span id="historyStepsPeriod" class="visually-hidden">14 DIES</span>
+          </article>
+
+          <article class="progress-kpi">
+            <div class="progress-kpi__header">
+              <span>POLS</span>
+              <span id="historyHeartRateTrend" class="trend-indicator trend-indicator--neutral">—</span>
+            </div>
+            <strong id="historyHeartRateAverage">—</strong>
+            <small id="historyHeartRateCoverage">Esperant dades</small>
+            <span id="historyHeartRatePeriod" class="visually-hidden">14 DIES</span>
+          </article>
+
+          <article class="progress-kpi">
+            <div class="progress-kpi__header">
+              <span>ENTRENAMENT</span>
+              <span id="historyTrainingTrend" class="trend-indicator trend-indicator--neutral">—</span>
+            </div>
+            <strong id="historyTrainingTotal">—</strong>
+            <small id="historyTrainingDetail">Sense dades</small>
+            <span id="historyTrainingPeriod" class="visually-hidden">14 DIES</span>
+          </article>
+        </section>
+
+
+
+        <section class="surface-card records-strip" aria-label="Rècords personals">
+          <span class="section-kicker">RÈCORDS</span>
+
+          <div class="records-strip__grid">
+            <article class="record-compact">
+              <span>PES</span>
+              <strong>
+                <b id="recordWeightMin">—</b>
+                <i>–</i>
+                <b id="recordWeightMax">—</b>
+                <em>kg</em>
+              </strong>
+              <small>
+                <span id="recordWeightMinDate">—</span>
+                ·
+                <span id="recordWeightMaxDate">—</span>
+              </small>
+            </article>
+
+            <article class="record-compact">
+              <span>PASSOS</span>
+              <strong id="recordStepsMax">—</strong>
+              <small id="recordStepsMaxDate">—</small>
+
+              <div class="record-progress__labels">
+                <span>AVUI <b id="recordStepsToday">—</b></span>
+                <span id="recordStepsProgressLabel">—</span>
+              </div>
+
+              <div class="record-progress" aria-hidden="true">
+                <span id="recordStepsProgress"></span>
+              </div>
+            </article>
+
+            <article class="record-compact">
+              <span>POLS</span>
+              <strong>
+                <b id="recordHeartRateMin">—</b>
+                <i>–</i>
+                <b id="recordHeartRateMax">—</b>
+                <em>bpm</em>
+              </strong>
+              <small>
+                <span id="recordHeartRateMinDate">—</span>
+                ·
+                <span id="recordHeartRateMaxDate">—</span>
+              </small>
+            </article>
+
+            <article class="record-compact">
+              <span>SESSIÓ</span>
+              <strong id="recordTrainingMax">—</strong>
+              <small id="recordTrainingMaxDate">—</small>
+            </article>
           </div>
         </section>
 
@@ -397,7 +466,13 @@
               <span class="section-kicker">MOVIMENT</span>
               <h2>Passos</h2>
             </div>
-            <span class="chip" id="stepsPeriodChip">14D</span>
+            <div class="chart-card__actions">
+              <span class="chart-legend chart-legend--simple">
+                <i></i>Valor
+                <b></b>Tendència
+              </span>
+              <span class="chip" id="stepsPeriodChip">14D</span>
+            </div>
           </div>
           <canvas id="stepsChart" width="720" height="300"></canvas>
         </section>
@@ -408,7 +483,13 @@
               <span class="section-kicker">COR · MOSTRES OBSERVADES</span>
               <h2>Freqüència cardíaca mitjana</h2>
             </div>
-            <span class="chip" id="heartRatePeriodChip">14D</span>
+            <div class="chart-card__actions">
+              <span class="chart-legend chart-legend--simple">
+                <i></i>Valor
+                <b></b>Tendència
+              </span>
+              <span class="chip" id="heartRatePeriodChip">14D</span>
+            </div>
           </div>
           <canvas id="heartRateChart" width="720" height="300"></canvas>
         </section>
@@ -419,7 +500,13 @@
               <span class="section-kicker">CÀRREGA REALITZADA</span>
               <h2>Temps d'entrenament</h2>
             </div>
-            <span class="chip" id="trainingPeriodChip">14D</span>
+            <div class="chart-card__actions">
+              <span class="chart-legend chart-legend--simple">
+                <i></i>Valor
+                <b></b>Tendència
+              </span>
+              <span class="chip" id="trainingPeriodChip">14D</span>
+            </div>
           </div>
           <canvas id="trainingChart" width="720" height="300"></canvas>
         </section>

@@ -374,6 +374,137 @@ export function renderApp(state, today) {
   renderRecentDays(state);
 }
 
+
+function numericTrend(values) {
+  const points = (values || [])
+    .filter(value => value != null)
+    .map(Number)
+    .filter(Number.isFinite);
+
+  if (points.length < 2) {
+    return null;
+  }
+
+  const start = points[0];
+  const end = points.at(-1);
+  const delta = end - start;
+  const percent =
+    start === 0
+      ? null
+      : (delta / Math.abs(start)) * 100;
+
+  return {
+    delta,
+    percent
+  };
+}
+
+function renderTrendIndicator(
+  elementId,
+  values,
+  {
+    positiveDirection = 1,
+    neutral = false,
+    absoluteThreshold = 0
+  } = {}
+) {
+  const element = $(elementId);
+  const trend = numericTrend(values);
+
+  element.title =
+    'Final del període comparat amb l’inici · tendència suavitzada';
+
+  element.className =
+    'trend-indicator trend-indicator--neutral';
+
+  if (!trend || trend.percent == null) {
+    element.textContent = '—';
+    element.setAttribute(
+      'aria-label',
+      'Tendència no disponible'
+    );
+    return;
+  }
+
+  const stable =
+    Math.abs(trend.delta) <= absoluteThreshold ||
+    Math.abs(trend.percent) < 1;
+
+  if (stable) {
+    element.textContent = '→ ESTABLE';
+    element.setAttribute(
+      'aria-label',
+      'Tendència estable'
+    );
+    return;
+  }
+
+  const direction =
+    trend.delta > 0 ? 1 : -1;
+
+  const arrow =
+    direction > 0 ? '↑' : '↓';
+
+  element.textContent =
+    `${arrow} ${Math.abs(trend.percent)
+      .toFixed(0)}%`;
+
+  if (neutral || !positiveDirection) {
+    element.setAttribute(
+      'aria-label',
+      `Canvi observat del ${Math.abs(
+        trend.percent
+      ).toFixed(0)} per cent`
+    );
+    return;
+  }
+
+  const isPositive =
+    direction === positiveDirection;
+
+  element.className =
+    `trend-indicator ${
+      isPositive
+        ? 'trend-indicator--positive'
+        : 'trend-indicator--negative'
+    }`;
+
+  element.setAttribute(
+    'aria-label',
+    `Tendència ${
+      isPositive ? 'positiva' : 'negativa'
+    }: ${Math.abs(trend.percent).toFixed(0)} per cent`
+  );
+}
+
+function setRecordProgress(
+  elementId,
+  current,
+  record
+) {
+  const element = $(elementId);
+
+  const percentage =
+    current != null &&
+    record != null &&
+    Number(record) > 0
+      ? Math.min(
+          100,
+          Math.max(
+            0,
+            Number(current) /
+              Number(record) *
+              100
+          )
+        )
+      : 0;
+
+  element.style.width =
+    `${percentage.toFixed(1)}%`;
+
+  return percentage;
+}
+
 export function renderCharts(state) {
   const history = createHistorySummary(
     state,
@@ -423,7 +554,7 @@ export function renderCharts(state) {
   drawChart(
     $('stepsChart'),
     history.steps.values,
-    null,
+    history.steps.trendValues,
     {
       labels: history.steps.labels,
       zeroFloor: true
@@ -433,7 +564,7 @@ export function renderCharts(state) {
   drawChart(
     $('heartRateChart'),
     history.heartRate.values,
-    null,
+    history.heartRate.trendValues,
     {
       labels: history.heartRate.labels
     }
@@ -442,11 +573,72 @@ export function renderCharts(state) {
   drawChart(
     $('trainingChart'),
     history.training.minutesByWeek,
-    null,
+    history.training.trendValues,
     {
       labels: history.training.labels,
       zeroFloor: true
     }
+  );
+
+
+  const weightTrajectory =
+    history.weight.trajectoryValues
+      .filter(value => value != null)
+      .map(Number)
+      .filter(Number.isFinite);
+
+  let weightGoalDirection = 0;
+
+  if (weightTrajectory.length >= 2) {
+    const trajectoryDelta =
+      weightTrajectory.at(-1) -
+      weightTrajectory[0];
+
+    weightGoalDirection =
+      trajectoryDelta > 0
+        ? 1
+        : trajectoryDelta < 0
+          ? -1
+          : 0;
+  } else if (
+    history.weight.requiredWeeklyRate != null
+  ) {
+    weightGoalDirection =
+      history.weight.requiredWeeklyRate > 0
+        ? 1
+        : history.weight.requiredWeeklyRate < 0
+          ? -1
+          : 0;
+  }
+
+  renderTrendIndicator(
+    'historyWeightTrend',
+    history.weight.trendValues,
+    {
+      positiveDirection:
+        weightGoalDirection,
+      neutral:
+        weightGoalDirection === 0,
+      absoluteThreshold: 0.1
+    }
+  );
+
+  renderTrendIndicator(
+    'historyStepsTrend',
+    history.steps.trendValues
+  );
+
+  renderTrendIndicator(
+    'historyHeartRateTrend',
+    history.heartRate.trendValues,
+    {
+      neutral: true
+    }
+  );
+
+  renderTrendIndicator(
+    'historyTrainingTrend',
+    history.training.trendValues
   );
 
   $('historyWeightPeriod').textContent =
@@ -529,9 +721,7 @@ export function renderCharts(state) {
   }
 
   $('historyWeightDetail').textContent =
-    rateParts.length
-      ? `${trajectoryText} · ${rateParts.join(' · ')}`
-      : trajectoryText;
+    trajectoryText;
 
   $('historyStepsPeriod').textContent =
     history.steps.period.title.toUpperCase();
@@ -554,8 +744,8 @@ export function renderCharts(state) {
 
   $('historyStepsCoverage').textContent =
     history.steps.coverage
-      ? `mitjana de ${history.steps.coverage} dies · cobertura ${history.steps.coverage}/${history.steps.expectedDays}`
-      : 'Encara no hi ha dades automàtiques';
+      ? `${history.steps.coverage}/${history.steps.expectedDays} dies`
+      : 'Sense dades';
 
   $('historyHeartRateAverage').textContent =
     history.heartRate.average == null
@@ -580,8 +770,8 @@ export function renderCharts(state) {
     history.heartRate.coverage &&
     heartRateMinimum != null &&
     heartRateMaximum != null
-      ? `mínim ${heartRateMinimum} bpm · màxim ${heartRateMaximum} bpm · ${history.heartRate.coverage} dies amb dades`
-      : 'Encara no hi ha dades automàtiques';
+      ? `${heartRateMinimum}–${heartRateMaximum} bpm · ${history.heartRate.coverage}/${history.heartRate.expectedDays} dies`
+      : 'Sense dades';
 
   $('historyTrainingTotal').textContent =
     history.training.totalSessions
@@ -590,8 +780,151 @@ export function renderCharts(state) {
 
   $('historyTrainingDetail').textContent =
     history.training.totalSessions
-      ? `${Math.round(history.training.totalMinutes)} min en 4 setmanes`
-      : 'Sense entrenaments en el període';
+      ? `${Math.round(history.training.totalMinutes)} min`
+      : 'Sense entrenaments';
+
+  const formatRecordDate = date =>
+    date
+      ? new Intl.DateTimeFormat(
+          'ca-ES',
+          {
+            day: '2-digit',
+            month: '2-digit',
+            year: '2-digit'
+          }
+        ).format(
+          new Date(
+            `${date}T12:00:00`
+          )
+        )
+      : '—';
+
+  const formatInteger = value =>
+    Math.round(
+      Number(value)
+    ).toLocaleString('ca-ES');
+
+  const formatWeightRecord = value =>
+    Number(value)
+      .toFixed(1)
+      .replace('.', ',');
+
+  const weightRecords =
+    history.records.weight;
+
+  $('recordWeightMin').textContent =
+    weightRecords.min
+      ? formatWeightRecord(
+          weightRecords.min.value
+        )
+      : '—';
+
+  $('recordWeightMinDate').textContent =
+    weightRecords.min
+      ? formatRecordDate(
+          weightRecords.min.date
+        )
+      : '—';
+
+  $('recordWeightMax').textContent =
+    weightRecords.max
+      ? formatWeightRecord(
+          weightRecords.max.value
+        )
+      : '—';
+
+  $('recordWeightMaxDate').textContent =
+    weightRecords.max
+      ? formatRecordDate(
+          weightRecords.max.date
+        )
+      : '—';
+
+  const stepRecords =
+    history.records.steps;
+
+  $('recordStepsMax').textContent =
+    stepRecords.max
+      ? formatInteger(
+          stepRecords.max.value
+        )
+      : '—';
+
+  $('recordStepsMaxDate').textContent =
+    stepRecords.max
+      ? formatRecordDate(
+          stepRecords.max.date
+        )
+      : '—';
+
+  $('recordStepsToday').textContent =
+    stepRecords.today
+      ? formatInteger(
+          stepRecords.today.value
+        )
+      : '—';
+
+  const stepsProgress =
+    setRecordProgress(
+      'recordStepsProgress',
+      stepRecords.today?.value,
+      stepRecords.max?.value
+    );
+
+  $('recordStepsProgressLabel').textContent =
+    stepRecords.today &&
+    stepRecords.max
+      ? `${Math.round(stepsProgress)}%`
+      : '—';
+
+  const heartRecords =
+    history.records.heartRate;
+
+  $('recordHeartRateMin').textContent =
+    heartRecords.min
+      ? formatInteger(
+          heartRecords.min.value
+        )
+      : '—';
+
+  $('recordHeartRateMinDate').textContent =
+    heartRecords.min
+      ? formatRecordDate(
+          heartRecords.min.date
+        )
+      : '—';
+
+  $('recordHeartRateMax').textContent =
+    heartRecords.max
+      ? formatInteger(
+          heartRecords.max.value
+        )
+      : '—';
+
+  $('recordHeartRateMaxDate').textContent =
+    heartRecords.max
+      ? formatRecordDate(
+          heartRecords.max.date
+        )
+      : '—';
+
+  const trainingRecords =
+    history.records.training;
+
+  $('recordTrainingMax').textContent =
+    trainingRecords.max
+      ? `${formatInteger(
+          trainingRecords.max.value
+        )} min`
+      : '—';
+
+  $('recordTrainingMaxDate').textContent =
+    trainingRecords.max
+      ? formatRecordDate(
+          trainingRecords.max.date
+        )
+      : '—';
+
 }
 
 export function openScreen(screenId) {

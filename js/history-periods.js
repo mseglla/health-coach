@@ -364,6 +364,41 @@ export function historyStartForDates(
   return localDateISO(start);
 }
 
+export function rollingAverage(
+  values,
+  windowSize
+) {
+  return values.map(
+    (_, index) => {
+      const window = values
+        .slice(
+          Math.max(
+            0,
+            index - windowSize + 1
+          ),
+          index + 1
+        )
+        .filter(
+          value => value != null
+        )
+        .map(Number);
+
+      if (
+        window.length <
+        Math.min(3, windowSize)
+      ) {
+        return null;
+      }
+
+      return window.reduce(
+        (sum, value) =>
+          sum + value,
+        0
+      ) / window.length;
+    }
+  );
+}
+
 export function createDailyMetricHistory(
   metrics,
   {
@@ -460,6 +495,17 @@ export function createDailyMetricHistory(
       buckets.map(bucket => bucket.label),
     values:
       buckets.map(bucket => bucket.value),
+    trendValues:
+      rollingAverage(
+        buckets.map(
+          bucket => bucket.value
+        ),
+        period.mode === 'daily'
+          ? 7
+          : period.mode === 'weekly'
+            ? 4
+            : 3
+      ),
     average: average(dailyValues),
     observedMin:
       minimumValues.length

@@ -3,6 +3,8 @@ import { readFileSync } from 'node:fs';
 import { localDateISO } from '../js/calculations.js';
 import { chartTickIndexes } from '../js/charts.js';
 import { createHistorySummary } from '../js/history-summary.js';
+import { createPersonalRecords } from '../js/personal-records.js';
+import { rollingAverage } from '../js/history-periods.js';
 
 function dateWithOffset({
   days = 0,
@@ -165,6 +167,41 @@ assert.equal(
   152
 );
 
+assert.equal(
+  history14.steps.trendValues.length,
+  history14.steps.values.length
+);
+
+assert.equal(
+  history14.heartRate.trendValues.length,
+  history14.heartRate.values.length
+);
+
+assert.equal(
+  history14.training.trendValues.length,
+  history14.training.minutesByWeek.length
+);
+
+assert.deepEqual(
+  rollingAverage(
+    [1, 2, 3, 4],
+    3
+  ),
+  [null, null, 2, 3]
+);
+
+const records =
+  createPersonalRecords(state);
+
+assert.equal(records.weight.min.value, 83);
+assert.equal(records.weight.max.value, 90);
+assert.equal(records.steps.min.value, 10000);
+assert.equal(records.steps.max.value, 17000);
+assert.equal(records.heartRate.min.value, 45);
+assert.equal(records.heartRate.max.value, 157);
+assert.equal(records.training.min.value, 30);
+assert.equal(records.training.max.value, 37);
+
 const historyAll = createHistorySummary(
   state,
   {
@@ -218,13 +255,129 @@ assert.match(index, /id="historyWeightPeriod"/);
 assert.match(index, /id="historyTrainingPeriod"/);
 assert.match(index, /id="trainingPeriodChip"/);
 assert.match(ui, /activeHistoryPeriod/);
-assert.match(ui, /mínim/);
-assert.match(ui, /màxim/);
+assert.doesNotMatch(
+  ui,
+  /sessió més curta/
+);
+assert.doesNotMatch(
+  ui,
+  /stepRecords\.min/
+);
+assert.match(
+  index,
+  /id="historyWeightTrend"/
+);
+assert.match(
+  index,
+  /id="historyStepsTrend"/
+);
+assert.match(
+  index,
+  /id="historyHeartRateTrend"/
+);
+assert.match(
+  index,
+  /id="historyTrainingTrend"/
+);
+assert.match(
+  ui,
+  /trend-indicator--positive/
+);
+assert.match(
+  ui,
+  /trend-indicator--negative/
+);
+assert.match(index, /id="recordStepsMax"/);
+assert.match(
+  index,
+  /id="recordHeartRateMin"/
+);
+assert.match(
+  index,
+  /id="recordHeartRateMax"/
+);
+assert.match(index, /id="recordTrainingMax"/);
+assert.match(
+  index,
+  />SESSIÓ</
+);
+assert.doesNotMatch(
+  index,
+  /recordTrainingProgress/
+);
+assert.doesNotMatch(
+  ui,
+  /recordTrainingDetail/
+);
+assert.match(
+  ui,
+  /stepRecords\.today/
+);
+assert.doesNotMatch(
+  ui,
+  /stepRecords\.selectedMax/
+);
+assert.match(
+  index,
+  /id="recordStepsToday"/
+);
+assert.match(
+  index,
+  /id="recordStepsProgressLabel"/
+);
+assert.doesNotMatch(
+  ui,
+  /% DEL RÈCORD/
+);
+assert.match(
+  index,
+  /progress-kpi-strip/
+);
+assert.ok(
+  index.indexOf(
+    'history-period-selector'
+  ) <
+  index.indexOf(
+    'progress-kpi-strip'
+  )
+);
+assert.doesNotMatch(
+  index,
+  /<p class="eyebrow">PROGRÉS<\/p>/
+);
+assert.match(
+  ui,
+  /Final del període comparat amb l’inici/
+);
+assert.match(
+  index,
+  /records-strip/
+);
+assert.doesNotMatch(
+  index,
+  /personal-record-card/
+);
+assert.doesNotMatch(
+  index,
+  /recordStepsDetail/
+);
+assert.doesNotMatch(
+  index,
+  /recordWeightMaxDetail/
+);
+assert.doesNotMatch(
+  index,
+  /recordHeartRateDetail/
+);
+assert.match(
+  serviceWorker,
+  /\.\/js\/personal-records\.js/
+);
 assert.match(
   serviceWorker,
   /\.\/js\/history-periods\.js/
 );
-assert.match(serviceWorker, /health-coach-v29/);
+assert.match(serviceWorker, /health-coach-v37/);
 
 console.log(
   'PASS — períodes de passos i freqüència cardíaca'

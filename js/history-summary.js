@@ -7,8 +7,12 @@ import {
 import {
   createDailyMetricHistory,
   getHistoryPeriod,
-  historyStartForDates
+  historyStartForDates,
+  rollingAverage
 } from './history-periods.js';
+import {
+  createPersonalRecords
+} from './personal-records.js';
 
 function formatShortDate(dateString) {
   if (!dateString) return '';
@@ -281,8 +285,14 @@ function buildTrainingPeriod(
       ) || 0;
   });
 
+  const minutesByPeriod =
+    buckets.map(
+      bucket => bucket.minutes
+    );
+
   return {
     period,
+    startDate,
     labels:
       buckets.map(
         bucket => bucket.label
@@ -292,8 +302,15 @@ function buildTrainingPeriod(
         bucket => bucket.sessions
       ),
     minutesByWeek:
-      buckets.map(
-        bucket => bucket.minutes
+      minutesByPeriod,
+    trendValues:
+      rollingAverage(
+        minutesByPeriod,
+        period.mode === 'daily'
+          ? 7
+          : period.mode === 'weekly'
+            ? 4
+            : 3
       ),
     totalSessions:
       buckets.reduce(
@@ -450,6 +467,9 @@ export function createHistorySummary(
       historyPeriod
     );
 
+  const personalRecords =
+    createPersonalRecords(state);
+
   return {
     weight: {
       values: rawWeightValues,
@@ -473,6 +493,8 @@ export function createHistorySummary(
 
     heartRate: heartRateHistory,
 
-    training: weeks
+    training: weeks,
+
+    records: personalRecords
   };
 }
