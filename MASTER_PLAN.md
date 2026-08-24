@@ -284,6 +284,8 @@ Integra les recomanacions de tots els especialistes i resol conflictes. Per exem
 - [x] Background Delivery validat en dispositiu real.
 - [x] Observer de passos.
 - [x] Observer d’entrenaments.
+- [x] Observer de freqüència cardíaca i Background Delivery horari implementats.
+- [ ] Validar en dispositiu real el trigger de freqüència cardíaca en segon pla.
 - [x] Upsert i deduplicació a Supabase.
 - [x] Importació històrica + refresc recent.
 - [x] Migració de tipus de mètriques diàries.
@@ -310,9 +312,19 @@ Integra les recomanacions de tots els especialistes i resol conflictes. Per exem
 - [x] Freqüència cardíaca mitjana/màxima dins dels entrenaments quan HealthKit la proporciona.
 - [x] Potència mitjana/màxima per running/cycling quan HealthKit la proporciona.
 
+#### Interpretació i historial a la PWA
+
+- [x] Càrrega paginada de tot l’historial de mètriques.
+- [x] Selector global: 7D, 14D, 30D, 3M, 6M, 1A i tot l’històric.
+- [x] Agregació diària, setmanal i mensual segons el període.
+- [x] Tendències visuals de pes, passos, pols i entrenament.
+- [x] Rècords històrics de pes, passos, pols observat i durada de sessió.
+- [x] Disseny lean amb Supabase com a font de veritat.
+- [x] Freqüència cardíaca tractada com a context de salut, no com a repte.
+
 #### Salut i recuperació pendents
 
-- [ ] Freqüència cardíaca general.
+- [x] Freqüència cardíaca general: mitjana, mínima i màxima diàries.
 - [ ] Freqüència cardíaca en repòs.
 - [ ] HRV.
 - [ ] Son.
