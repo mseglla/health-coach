@@ -28,7 +28,9 @@ final class BackgroundSyncCoordinator {
         userId: String,
         accessToken: String
     )? {
-        await auth.restoreSession()
+        guard await auth.restoreSession() else {
+            return nil
+        }
 
         guard let userId = auth.userId,
               let accessToken = auth.accessToken

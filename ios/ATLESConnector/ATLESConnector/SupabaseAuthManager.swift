@@ -12,7 +12,9 @@ import Combine
 final class SupabaseAuthManager: ObservableObject {
     static let shared = SupabaseAuthManager()
 
-    private var restoreTask: Task<Void, Never>?
+    private var restoreTask: Task<Bool, Never>?
+    private var accessTokenExpiresAt: Date?
+    private let refreshLeeway: TimeInterval = 60
     @Published var isAuthenticated = false
     @Published var userId: String?
     @Published var errorMessage: String?
@@ -85,68 +87,69 @@ final class SupabaseAuthManager: ObservableObject {
                 from: data
             )
 
-            accessToken = session.accessToken
-            userId = session.user.id
-            isAuthenticated = true
-
-            try KeychainStore.save(
-                session.accessToken,
-                account: "supabase_access_token"
-            )
-
-            try KeychainStore.save(
-                session.refreshToken,
-                account: "supabase_refresh_token"
-            )
-
-            try KeychainStore.save(
-                session.user.id,
-                account: "supabase_user_id"
-            )
+            try applySession(session)
 
         } catch {
             errorMessage = error.localizedDescription
         }
     }
 
-    func restoreSession() async {
-        if isAuthenticated, accessToken != nil {
-            return
+    @discardableResult
+    func restoreSession() async -> Bool {
+        if hasUsableAccessToken {
+            return true
         }
 
         if let restoreTask {
-            await restoreTask.value
-            return
+            return await restoreTask.value
         }
 
         let task = Task { @MainActor [weak self] in
             guard let self else {
-                return
+                return false
             }
 
-            await self.performRestoreSession()
+            return await self.performRestoreSession()
         }
 
         restoreTask = task
-        await task.value
+        let restored = await task.value
         restoreTask = nil
+
+        return restored
     }
 
-    private func performRestoreSession() async {
+    private var hasUsableAccessToken: Bool {
+        guard isAuthenticated,
+              accessToken != nil,
+              userId != nil,
+              let accessTokenExpiresAt
+        else {
+            return false
+        }
+
+        return accessTokenExpiresAt.timeIntervalSinceNow >
+            refreshLeeway
+    }
+
+    private func performRestoreSession() async -> Bool {
         errorMessage = nil
 
         do {
             guard let refreshToken = try KeychainStore.load(
                 account: "supabase_refresh_token"
             ) else {
-                return
+                return false
             }
 
             try await refreshSession(
                 refreshToken: refreshToken
             )
+
+            return hasUsableAccessToken
         } catch {
             errorMessage = error.localizedDescription
+            return false
         }
     }
 
@@ -180,10 +183,26 @@ final class SupabaseAuthManager: ObservableObject {
             for: request
         )
 
-        guard let httpResponse = response as? HTTPURLResponse,
-              (200...299).contains(httpResponse.statusCode)
+        guard let httpResponse =
+                response as? HTTPURLResponse
         else {
-            throw AuthError.refreshFailed
+            throw AuthError.invalidResponse
+        }
+
+        guard (200...299).contains(
+            httpResponse.statusCode
+        ) else {
+            let apiError = try? JSONDecoder().decode(
+                SupabaseErrorResponse.self,
+                from: data
+            )
+
+            let message =
+                apiError?.msg ??
+                apiError?.message ??
+                "No s'ha pogut renovar la sessió."
+
+            throw AuthError.refreshFailed(message)
         }
 
         let session = try JSONDecoder().decode(
@@ -191,7 +210,22 @@ final class SupabaseAuthManager: ObservableObject {
             from: data
         )
 
+        try applySession(session)
+    }
+
+    private func applySession(
+        _ session: SignInResponse
+    ) throws {
+        let expiresAt =
+            session.expiresAt.map {
+                Date(timeIntervalSince1970: $0)
+            } ??
+            Date().addingTimeInterval(
+                session.expiresIn ?? 3600
+            )
+
         accessToken = session.accessToken
+        accessTokenExpiresAt = expiresAt
         userId = session.user.id
         isAuthenticated = true
 
@@ -213,6 +247,7 @@ final class SupabaseAuthManager: ObservableObject {
 
     func signOut() {
         accessToken = nil
+        accessTokenExpiresAt = nil
         userId = nil
         isAuthenticated = false
         errorMessage = nil
@@ -231,11 +266,15 @@ private struct SignInRequest: Encodable {
 private struct SignInResponse: Decodable {
     let accessToken: String
     let refreshToken: String
+    let expiresAt: TimeInterval?
+    let expiresIn: TimeInterval?
     let user: SupabaseUser
 
     enum CodingKeys: String, CodingKey {
         case accessToken = "access_token"
         case refreshToken = "refresh_token"
+        case expiresAt = "expires_at"
+        case expiresIn = "expires_in"
         case user
     }
 }
@@ -258,7 +297,19 @@ private struct RefreshRequest: Encodable {
     }
 }
 
-private enum AuthError: Error {
+private enum AuthError: LocalizedError {
     case invalidURL
-    case refreshFailed
+    case invalidResponse
+    case refreshFailed(String)
+
+    var errorDescription: String? {
+        switch self {
+        case .invalidURL:
+            return "La URL d'autenticació no és vàlida."
+        case .invalidResponse:
+            return "Supabase ha retornat una resposta no vàlida."
+        case .refreshFailed(let message):
+            return message
+        }
+    }
 }
