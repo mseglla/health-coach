@@ -461,6 +461,33 @@ export function createHistorySummary(
       }
     );
 
+  const activeEnergyHistory =
+    createDailyMetricHistory(
+      state.healthMetrics || [],
+      {
+        valueType: 'active_kcal',
+        periodKey: historyPeriod
+      }
+    );
+
+  const restingEnergyHistory =
+    createDailyMetricHistory(
+      state.healthMetrics || [],
+      {
+        valueType: 'resting_kcal',
+        periodKey: historyPeriod
+      }
+    );
+
+  const totalEnergyHistory =
+    createDailyMetricHistory(
+      state.healthMetrics || [],
+      {
+        valueType: 'total_kcal',
+        periodKey: historyPeriod
+      }
+    );
+
   const weeks =
     buildTrainingPeriod(
       state,
@@ -492,6 +519,12 @@ export function createHistorySummary(
     steps: stepsHistory,
 
     heartRate: heartRateHistory,
+
+    energy: {
+      active: activeEnergyHistory,
+      resting: restingEnergyHistory,
+      total: totalEnergyHistory
+    },
 
     training: weeks,
 

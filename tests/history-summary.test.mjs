@@ -57,6 +57,24 @@ dates.forEach((date, index) => {
       type: 'heart_rate_max_bpm',
       value: 150 + index,
       importedAt: '2026-08-24T09:00:00Z'
+    },
+    {
+      date,
+      type: 'active_kcal',
+      value: 500 + index * 100,
+      importedAt: '2026-08-24T09:00:00Z'
+    },
+    {
+      date,
+      type: 'resting_kcal',
+      value: 1800 + index * 10,
+      importedAt: '2026-08-24T09:00:00Z'
+    },
+    {
+      date,
+      type: 'total_kcal',
+      value: 2300 + index * 110,
+      importedAt: '2026-08-24T09:00:00Z'
     }
   );
 });
@@ -127,6 +145,18 @@ for (
     `Cobertura cardíaca incorrecta per ${period}`
   );
 
+  for (const energyType of [
+    'active',
+    'resting',
+    'total'
+  ]) {
+    assert.equal(
+      history.energy[energyType].coverage,
+      coverage,
+      `Cobertura energètica incorrecta per ${energyType} · ${period}`
+    );
+  }
+
   assert.equal(
     history.weight.records.length,
     coverage,
@@ -168,6 +198,37 @@ assert.equal(
 );
 
 assert.equal(
+  history14.energy.active.average,
+  600
+);
+
+assert.equal(
+  history14.energy.resting.average,
+  1810
+);
+
+assert.equal(
+  history14.energy.total.average,
+  2410
+);
+
+for (const energyType of [
+  'active',
+  'resting',
+  'total'
+]) {
+  assert.equal(
+    history14.energy[energyType].values.length,
+    14
+  );
+
+  assert.equal(
+    history14.energy[energyType].trendValues.length,
+    history14.energy[energyType].values.length
+  );
+}
+
+assert.equal(
   history14.steps.trendValues.length,
   history14.steps.values.length
 );
@@ -197,6 +258,14 @@ assert.equal(records.weight.min.value, 83);
 assert.equal(records.weight.max.value, 90);
 assert.equal(records.steps.min.value, 10000);
 assert.equal(records.steps.max.value, 17000);
+assert.equal(
+  records.energy.active.max.value,
+  1200
+);
+assert.equal(
+  records.energy.active.today.value,
+  500
+);
 assert.equal(records.heartRate.min.value, 45);
 assert.equal(records.heartRate.max.value, 157);
 assert.equal(records.training.min.value, 30);
@@ -273,6 +342,18 @@ assert.match(
 );
 assert.match(
   index,
+  /id="historyEnergyTrend"/
+);
+assert.match(
+  index,
+  /id="historyEnergyActiveAverage"/
+);
+assert.match(
+  index,
+  /id="historyEnergyDetail"/
+);
+assert.match(
+  index,
   /id="historyHeartRateTrend"/
 );
 assert.match(
@@ -287,7 +368,41 @@ assert.match(
   ui,
   /trend-indicator--negative/
 );
+assert.match(index, /id="energyChart"/);
+assert.match(index, /id="energyPeriodChip"/);
+assert.match(ui, /history\.energy\.active/);
+assert.match(ui, /history\.energy\.resting/);
+assert.match(ui, /history\.energy\.total/);
 assert.match(index, /id="recordStepsMax"/);
+assert.match(index, /id="recordEnergyMax"/);
+assert.match(
+  index,
+  /id="recordEnergyMaxDate"/
+);
+assert.match(
+  index,
+  /id="recordEnergyToday"/
+);
+assert.match(
+  index,
+  /id="recordEnergyProgress"/
+);
+assert.match(
+  index,
+  /id="recordEnergyProgressLabel"/
+);
+assert.match(
+  index,
+  /record-compact--energy/
+);
+assert.match(
+  ui,
+  /history\.records\.energy\.active/
+);
+assert.match(
+  ui,
+  /activeEnergyRecords\.today/
+);
 assert.match(
   index,
   /id="recordHeartRateMin"/
@@ -377,7 +492,7 @@ assert.match(
   serviceWorker,
   /\.\/js\/history-periods\.js/
 );
-assert.match(serviceWorker, /health-coach-v37/);
+assert.match(serviceWorker, /health-coach-v40/);
 
 console.log(
   'PASS — períodes de passos i freqüència cardíaca'
