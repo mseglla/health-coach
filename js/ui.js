@@ -562,6 +562,16 @@ export function renderCharts(state) {
   );
 
   drawChart(
+    $('energyChart'),
+    history.energy.active.values,
+    history.energy.active.trendValues,
+    {
+      labels: history.energy.active.labels,
+      zeroFloor: true
+    }
+  );
+
+  drawChart(
     $('heartRateChart'),
     history.heartRate.values,
     history.heartRate.trendValues,
@@ -626,6 +636,11 @@ export function renderCharts(state) {
   renderTrendIndicator(
     'historyStepsTrend',
     history.steps.trendValues
+  );
+
+  renderTrendIndicator(
+    'historyEnergyTrend',
+    history.energy.active.trendValues
   );
 
   renderTrendIndicator(
@@ -729,6 +744,12 @@ export function renderCharts(state) {
   $('stepsPeriodChip').textContent =
     history.steps.period.label;
 
+  $('historyEnergyPeriod').textContent =
+    history.energy.active.period.title.toUpperCase();
+
+  $('energyPeriodChip').textContent =
+    history.energy.active.period.label;
+
   $('historyHeartRatePeriod').textContent =
     history.heartRate.period.title.toUpperCase();
 
@@ -745,6 +766,53 @@ export function renderCharts(state) {
   $('historyStepsCoverage').textContent =
     history.steps.coverage
       ? `${history.steps.coverage}/${history.steps.expectedDays} dies`
+      : 'Sense dades';
+
+  const formatEnergyAverage =
+    metric =>
+      metric.average == null
+        ? null
+        : Math.round(
+            metric.average
+          ).toLocaleString('ca-ES');
+
+  const activeEnergyAverage =
+    formatEnergyAverage(
+      history.energy.active
+    );
+
+  const restingEnergyAverage =
+    formatEnergyAverage(
+      history.energy.resting
+    );
+
+  const totalEnergyAverage =
+    formatEnergyAverage(
+      history.energy.total
+    );
+
+  $('historyEnergyActiveAverage').textContent =
+    activeEnergyAverage == null
+      ? '—'
+      : `${activeEnergyAverage} kcal`;
+
+  const energyContext = [];
+
+  if (restingEnergyAverage != null) {
+    energyContext.push(
+      `${restingEnergyAverage} repòs`
+    );
+  }
+
+  if (totalEnergyAverage != null) {
+    energyContext.push(
+      `${totalEnergyAverage} total`
+    );
+  }
+
+  $('historyEnergyDetail').textContent =
+    energyContext.length
+      ? energyContext.join(' · ')
       : 'Sense dades';
 
   $('historyHeartRateAverage').textContent =
@@ -875,6 +943,43 @@ export function renderCharts(state) {
     stepRecords.today &&
     stepRecords.max
       ? `${Math.round(stepsProgress)}%`
+      : '—';
+
+  const activeEnergyRecords =
+    history.records.energy.active;
+
+  $('recordEnergyMax').textContent =
+    activeEnergyRecords.max
+      ? formatInteger(
+          activeEnergyRecords.max.value
+        )
+      : '—';
+
+  $('recordEnergyMaxDate').textContent =
+    activeEnergyRecords.max
+      ? formatRecordDate(
+          activeEnergyRecords.max.date
+        )
+      : '—';
+
+  $('recordEnergyToday').textContent =
+    activeEnergyRecords.today
+      ? formatInteger(
+          activeEnergyRecords.today.value
+        )
+      : '—';
+
+  const energyProgress =
+    setRecordProgress(
+      'recordEnergyProgress',
+      activeEnergyRecords.today?.value,
+      activeEnergyRecords.max?.value
+    );
+
+  $('recordEnergyProgressLabel').textContent =
+    activeEnergyRecords.today &&
+    activeEnergyRecords.max
+      ? `${Math.round(energyProgress)}%`
       : '—';
 
   const heartRecords =

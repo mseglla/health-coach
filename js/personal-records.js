@@ -101,6 +101,18 @@ export function createPersonalRecords(
         record.date === localDateISO()
     ) || null;
 
+  const activeEnergy =
+    metricRecords(
+      state.healthMetrics || [],
+      'active_kcal'
+    );
+
+  const todayActiveEnergy =
+    activeEnergy.find(
+      record =>
+        record.date === localDateISO()
+    ) || null;
+
   const heartRateMinimums =
     metricRecords(
       state.healthMetrics || [],
@@ -145,6 +157,13 @@ export function createPersonalRecords(
     steps: {
       ...extrema(steps),
       today: todaySteps
+    },
+
+    energy: {
+      active: {
+        ...extrema(activeEnergy),
+        today: todayActiveEnergy
+      }
     },
 
     heartRate: {
