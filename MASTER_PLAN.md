@@ -273,7 +273,7 @@ Integra les recomanacions de tots els especialistes i resol conflictes. Per exem
 
 **Criteri de sortida:** completat.
 
-### Fase 3 — Dades automàtiques i Apple Health 🟡 EN CURS
+### Fase 3 — Dades automàtiques i Apple Health 🟡 TANCAMENT OPERATIU
 
 **Objectiu:** reduir al mínim l’entrada manual i construir un historial fiable de llarg termini.
 
@@ -317,8 +317,10 @@ Integra les recomanacions de tots els especialistes i resol conflictes. Per exem
 - [x] Càrrega paginada de tot l’historial de mètriques.
 - [x] Selector global: 7D, 14D, 30D, 3M, 6M, 1A i tot l’històric.
 - [x] Agregació diària, setmanal i mensual segons el període.
-- [x] Tendències visuals de pes, passos, pols i entrenament.
-- [x] Rècords històrics de pes, passos, pols observat i durada de sessió.
+- [x] Tendències visuals de pes, passos, kcal actives, pols i entrenament.
+- [x] Mitjanes de kcal actives, de repòs i totals segons el període.
+- [x] Rècords històrics de pes, passos, kcal actives, pols observat i durada de sessió.
+- [x] Progrés d’avui respecte dels rècords de passos i kcal actives.
 - [x] Disseny lean amb Supabase com a font de veritat.
 - [x] Freqüència cardíaca tractada com a context de salut, no com a repte.
 
@@ -347,6 +349,9 @@ Integra les recomanacions de tots els especialistes i resol conflictes. Per exem
 
 **Objectiu:** passar de registrar dades a donar criteri.
 
+- Analista de rendiment bàsic amb regles transparents.
+- Resums del període, canvis rellevants, tendències i rècords.
+- Comparació amb el propi historial sense diagnòstic ni prescripció.
 - Coach nutricional bàsic.
 - Coach d’entrenament bàsic.
 - Coach de recuperació i son.

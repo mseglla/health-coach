@@ -418,7 +418,7 @@
 .progress-kpi-strip {
   display: grid;
   grid-template-columns:
-    repeat(4, minmax(0, 1fr));
+    repeat(5, minmax(0, 1fr));
   overflow: hidden;
   padding: 0;
 }
@@ -476,7 +476,7 @@
 .records-strip__grid {
   display: grid;
   grid-template-columns:
-    repeat(4, minmax(0, 1fr));
+    repeat(5, minmax(0, 1fr));
 }
 
 .record-compact {
@@ -565,6 +565,11 @@
   .progress-kpi:nth-child(n + 3),
   .record-compact:nth-child(n + 3) {
     border-top: 1px solid var(--color-border);
+  }
+
+  .progress-kpi--energy,
+  .record-compact--energy {
+    grid-column: 1 / -1;
   }
 
   .record-compact {

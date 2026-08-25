@@ -365,6 +365,16 @@
             <span id="historyStepsPeriod" class="visually-hidden">14 DIES</span>
           </article>
 
+          <article class="progress-kpi progress-kpi--energy">
+            <div class="progress-kpi__header">
+              <span>KCAL ACTIVES</span>
+              <span id="historyEnergyTrend" class="trend-indicator trend-indicator--neutral">—</span>
+            </div>
+            <strong id="historyEnergyActiveAverage">—</strong>
+            <small id="historyEnergyDetail">Esperant dades</small>
+            <span id="historyEnergyPeriod" class="visually-hidden">14 DIES</span>
+          </article>
+
           <article class="progress-kpi">
             <div class="progress-kpi__header">
               <span>POLS</span>
@@ -442,6 +452,24 @@
               <strong id="recordTrainingMax">—</strong>
               <small id="recordTrainingMaxDate">—</small>
             </article>
+
+            <article class="record-compact record-compact--energy">
+              <span>KCAL ACTIVES</span>
+              <strong>
+                <b id="recordEnergyMax">—</b>
+                <em>kcal</em>
+              </strong>
+              <small id="recordEnergyMaxDate">—</small>
+
+              <div class="record-progress__labels">
+                <span>AVUI <b id="recordEnergyToday">—</b></span>
+                <span id="recordEnergyProgressLabel">—</span>
+              </div>
+
+              <div class="record-progress" aria-hidden="true">
+                <span id="recordEnergyProgress"></span>
+              </div>
+            </article>
           </div>
         </section>
 
@@ -475,6 +503,23 @@
             </div>
           </div>
           <canvas id="stepsChart" width="720" height="300"></canvas>
+        </section>
+
+        <section class="surface-card chart-card">
+          <div class="section-title-row">
+            <div>
+              <span class="section-kicker">ENERGIA</span>
+              <h2>Calories actives</h2>
+            </div>
+            <div class="chart-card__actions">
+              <span class="chart-legend chart-legend--simple">
+                <i></i>Valor
+                <b></b>Tendència
+              </span>
+              <span class="chip" id="energyPeriodChip">14D</span>
+            </div>
+          </div>
+          <canvas id="energyChart" width="720" height="300"></canvas>
         </section>
 
         <section class="surface-card chart-card">
