@@ -8,9 +8,9 @@ Construir un sistema personal de salut i rendiment que integri Apple Watch i App
 
 ## Estat global
 
-- **Fase actual:** Fase 2 — Nucli personal de salut
+- **Fase actual:** Fase 3 — Apple Health complet
 - **Estat:** en curs
-- **Pròxima fita:** començar la Fase 3 amb Apple Health complet
+- **Pròxima fita:** completar i validar la cobertura d’Apple Health de la Fase 3
 - **Branca d’integració:** `develop`
 - **Producció estable:** `main`
 
@@ -297,6 +297,21 @@ Demostrar amb dades reals que el flux `Apple Watch → Apple Health → connecto
 - [ ] Relacions entre son, rendiment, gana, estrès i adherència.
 - [ ] Informes diaris i setmanals.
 - [ ] Qualitat i cobertura de dades.
+- [x] Comparació descriptiva transparent entre períodes per a passos, calories actives i entrenament.
+
+### Validació anticipada — Analista v1 — 2026-08-26
+
+- Motor pur de comparació entre períodes complets equivalents.
+- El dia en curs queda exclòs per evitar conclusions amb dades parcials.
+- Passos i calories actives es comparen mitjançant mitjanes diàries.
+- L’entrenament es compara mitjançant minuts totals i sessions.
+- Cobertura i confiança explícites; les dades insuficients no generen conclusions.
+- Els períodes `7D`, `14D`, `30D`, `3M`, `6M` i `1A` disposen de comparació equivalent.
+- `TOT` no inventa cap període anterior.
+- La UI manté KPI fixos i mostra només direcció i percentatge sense jutjar-los com a bons o dolents.
+- No s’afegeixen recomanacions, diagnòstics ni inferències causals.
+- Validació funcional i visual completada en navegador local.
+- Commits principals: `8990554` i `e283841`.
 
 ## Fase 5 — Primers coaches
 
