@@ -623,3 +623,23 @@
 #stats .screen-header h1 {
   margin: 0;
 }
+
+.trend-indicator.period-comparison {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  margin-left: auto;
+  color: var(--color-muted);
+  font-size: 0.7rem;
+  font-weight: 900;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+}
+
+.trend-indicator.period-comparison[hidden] {
+  display: none;
+}
+
+.period-comparison__change {
+  line-height: 1;
+}
