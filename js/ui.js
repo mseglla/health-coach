@@ -18,6 +18,9 @@ import { createDailyInsight } from './daily-insight.js';
 import { createDailySnapshot } from './daily-snapshot.js';
 import { drawChart } from './charts.js';
 import { createHistorySummary } from './history-summary.js';
+import {
+  createPerformanceAnalysis
+} from './performance-analyst.js';
 
 export const $ = id => document.getElementById(id);
 
@@ -477,6 +480,133 @@ function renderTrendIndicator(
   );
 }
 
+function comparisonValue(
+  comparison,
+  period
+) {
+  if (comparison.id === 'training') {
+    return period.minutes;
+  }
+
+  return period.average;
+}
+
+function comparisonValueLabel(
+  comparison,
+  value
+) {
+  const formatted = Math.round(
+    Number(value)
+  ).toLocaleString('ca-ES');
+
+  if (comparison.id === 'training') {
+    return `${formatted} minuts`;
+  }
+
+  if (comparison.id === 'active_energy') {
+    return `${formatted} kcal al dia`;
+  }
+
+  return `${formatted} passos al dia`;
+}
+
+function renderComparisonIndicator(
+  elementId,
+  comparison
+) {
+  const element = $(elementId);
+
+  if (
+    !comparison ||
+    !comparison.comparable
+  ) {
+    element.hidden = true;
+    element.replaceChildren();
+    element.removeAttribute('title');
+    element.removeAttribute('aria-label');
+    return;
+  }
+
+  const previous = comparisonValue(
+    comparison,
+    comparison.previous
+  );
+
+  const current = comparisonValue(
+    comparison,
+    comparison.current
+  );
+
+  if (
+    previous == null ||
+    current == null
+  ) {
+    element.hidden = true;
+    return;
+  }
+
+  const arrow = {
+    up: '↑',
+    down: '↓',
+    stable: '→'
+  }[comparison.direction] || '→';
+
+  const change =
+    document.createElement('span');
+
+  change.className =
+    'period-comparison__change';
+
+  change.textContent =
+    comparison.percent == null
+      ? arrow
+      : `${arrow} ${Math.abs(
+          comparison.percent
+        ).toFixed(0)}%`;
+
+  const previousLabel =
+    comparisonValueLabel(
+      comparison,
+      previous
+    );
+
+  const currentLabel =
+    comparisonValueLabel(
+      comparison,
+      current
+    );
+
+  const directionLabel = {
+    up: 'augment',
+    down: 'descens',
+    stable: 'estable'
+  }[comparison.direction] || 'canvi';
+
+  const percentLabel =
+    comparison.percent == null
+      ? ''
+      : ` del ${Math.abs(
+          comparison.percent
+        ).toFixed(0)} per cent`;
+
+  const accessibleText =
+    `${comparison.label}: període seleccionat, ` +
+    `${currentLabel}; període anterior, ` +
+    `${previousLabel}; ${directionLabel}` +
+    `${percentLabel}.`;
+
+  element.hidden = false;
+  element.className =
+    'trend-indicator period-comparison';
+  element.replaceChildren(change);
+  element.title =
+    `${previousLabel} → ${currentLabel}`;
+  element.setAttribute(
+    'aria-label',
+    accessibleText
+  );
+}
+
 function setRecordProgress(
   elementId,
   current,
@@ -513,6 +643,15 @@ export function renderCharts(state) {
         activeHistoryPeriod
     }
   );
+
+  const performanceAnalysis =
+    createPerformanceAnalysis(
+      state,
+      {
+        periodKey:
+          activeHistoryPeriod
+      }
+    );
 
   document
     .querySelectorAll(
@@ -633,14 +772,15 @@ export function renderCharts(state) {
     }
   );
 
-  renderTrendIndicator(
+  renderComparisonIndicator(
     'historyStepsTrend',
-    history.steps.trendValues
+    performanceAnalysis.comparisons.steps
   );
 
-  renderTrendIndicator(
+  renderComparisonIndicator(
     'historyEnergyTrend',
-    history.energy.active.trendValues
+    performanceAnalysis
+      .comparisons.activeEnergy
   );
 
   renderTrendIndicator(
@@ -651,9 +791,10 @@ export function renderCharts(state) {
     }
   );
 
-  renderTrendIndicator(
+  renderComparisonIndicator(
     'historyTrainingTrend',
-    history.training.trendValues
+    performanceAnalysis
+      .comparisons.training
   );
 
   $('historyWeightPeriod').textContent =

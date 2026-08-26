@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 
 import {
   createPerformanceAnalysis
@@ -284,4 +285,119 @@ assert.equal(
 
 console.log(
   'PASS — Analista compara períodes complets amb cobertura explícita'
+);
+
+
+const index = readFileSync(
+  'index.html',
+  'utf8'
+);
+
+const ui = readFileSync(
+  'js/ui.js',
+  'utf8'
+);
+
+const css = readFileSync(
+  'css/components.css',
+  'utf8'
+);
+
+const serviceWorker = readFileSync(
+  'sw.js',
+  'utf8'
+);
+
+assert.doesNotMatch(
+  index,
+  /id="stats-title"/
+);
+
+assert.doesNotMatch(
+  index,
+  /id="log-title"/
+);
+
+assert.doesNotMatch(
+  index,
+  /<h1[^>]*>Registre ràpid<\/h1>/
+);
+
+assert.doesNotMatch(
+  index,
+  /Només allò que ATLES encara no pot captar/
+);
+
+assert.doesNotMatch(
+  index,
+  /<h2>Un toc i prou\.<\/h2>/
+);
+
+assert.match(
+  index,
+  /aria-label="Evolució"/
+);
+
+assert.match(
+  index,
+  /aria-label="Registre"/
+);
+
+assert.match(
+  ui,
+  /createPerformanceAnalysis/
+);
+
+assert.match(
+  ui,
+  /renderComparisonIndicator/
+);
+
+assert.match(
+  ui,
+  /comparisons\.steps/
+);
+
+assert.match(
+  ui,
+  /comparisons\.activeEnergy/
+);
+
+assert.match(
+  ui,
+  /comparisons\.training/
+);
+
+assert.match(
+  ui,
+  /element\.hidden = true/
+);
+
+assert.match(
+  css,
+  /\.trend-indicator\.period-comparison/
+);
+
+assert.match(
+  css,
+  /\.period-comparison__change/
+);
+
+assert.doesNotMatch(
+  css,
+  /\.period-comparison__bar/
+);
+
+assert.match(
+  serviceWorker,
+  /\.\/js\/performance-analyst\.js/
+);
+
+assert.match(
+  serviceWorker,
+  /health-coach-v42/
+);
+
+console.log(
+  'PASS — comparacions integrades als KPI fixos'
 );

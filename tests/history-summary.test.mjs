@@ -492,7 +492,7 @@ assert.match(
   serviceWorker,
   /\.\/js\/history-periods\.js/
 );
-assert.match(serviceWorker, /health-coach-v40/);
+assert.match(serviceWorker, /health-coach-v42/);
 
 console.log(
   'PASS — períodes de passos i freqüència cardíaca'
