@@ -2,6 +2,12 @@
 
 ## Objectiu
 
+Ampliació preparada, encara desactivada i pendent de validació nativa/DEV:
+[importació conjunta v2](healthkit-ingestion-v2.md). Afegeix mostres de repòs,
+HRV, VO₂max, composició corporal i intervals de son sense alterar aquest contracte
+d'agregats ni els registres manuals. Les exclusions de la prova tècnica següent
+descriuen l'abast original, no el nou magatzem `health_samples`.
+
 Definir el contracte mínim per importar dades d’Apple Health a ATLES mitjançant una capa nativa iOS.
 
 El flux previst és:

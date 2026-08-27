@@ -16,6 +16,10 @@ const backgroundCoordinator = readFileSync(
   'utf8'
 );
 
+const catalog = readFileSync(
+  'ios/ATLESConnector/ATLESConnector/HealthMetricCatalog.swift', 'utf8'
+);
+
 for (const metricType of [
   'heart_rate_avg_bpm',
   'heart_rate_min_bpm',
@@ -39,8 +43,8 @@ assert.match(
   /onHeartRateChanged: @escaping \(\) async -> Void/
 );
 assert.match(
-  swift,
-  /quantityType\(forIdentifier: \.heartRate\),\s*\.hourly/
+  catalog,
+  /HKQuantityType\(\.heartRate\), route: \.heartRate, frequency: \.hourly/
 );
 assert.match(
   swift,

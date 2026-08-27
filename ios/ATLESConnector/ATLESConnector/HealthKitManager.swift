@@ -51,34 +51,10 @@ final class HealthKitManager: ObservableObject {
     @Published var todaySteps: Double = 0
     @Published var workouts: [HKWorkout] = []
     @Published var authorizationError: String?
+    private var observers: [HKObserverQuery] = []
 
     private var readTypes: Set<HKObjectType> {
-        var types = Set<HKObjectType>()
-
-        if let stepType = HKObjectType.quantityType(
-            forIdentifier: .stepCount
-        ) {
-            types.insert(stepType)
-        }
-
-        types.insert(HKObjectType.workoutType())
-
-        [
-            HKQuantityTypeIdentifier.distanceWalkingRunning,
-            HKQuantityTypeIdentifier.activeEnergyBurned,
-            HKQuantityTypeIdentifier.basalEnergyBurned,
-            HKQuantityTypeIdentifier.heartRate,
-            HKQuantityTypeIdentifier.runningPower,
-            HKQuantityTypeIdentifier.cyclingPower
-        ].forEach { identifier in
-            if let type = HKObjectType.quantityType(
-                forIdentifier: identifier
-            ) {
-                types.insert(type)
-            }
-        }
-
-        return types
+        HealthMetricCatalog.readTypes
     }
 
     func requestAuthorization() async {
@@ -109,29 +85,11 @@ final class HealthKitManager: ObservableObject {
             return
         }
 
-        let types: [(HKSampleType, HKUpdateFrequency)] = [
-            (
-                HKObjectType.quantityType(forIdentifier: .stepCount),
-                .hourly
-            ),
-            (
-                HKObjectType.quantityType(forIdentifier: .heartRate),
-                .hourly
-            ),
-            (
-                HKObjectType.workoutType(),
-                .immediate
-            )
-        ].compactMap { type, frequency in
-            guard let type else { return nil }
-            return (type, frequency)
-        }
-
-        for (type, frequency) in types {
+        for descriptor in HealthMetricCatalog.observed {
             do {
                 try await healthStore.enableBackgroundDelivery(
-                    for: type,
-                    frequency: frequency
+                    for: descriptor.type,
+                    frequency: descriptor.frequency
                 )
 
             } catch {
@@ -145,66 +103,27 @@ final class HealthKitManager: ObservableObject {
     func startObservers(
         onStepsChanged: @escaping () async -> Void,
         onHeartRateChanged: @escaping () async -> Void,
-        onWorkoutsChanged: @escaping () async -> Void
+        onWorkoutsChanged: @escaping () async -> Void,
+        onSamplesChanged: @escaping (HealthSampleKind) async -> Void = { _ in }
     ) {
-        if let stepType = HKObjectType.quantityType(
-            forIdentifier: .stepCount
-        ) {
-            let stepObserver = HKObserverQuery(
-                sampleType: stepType,
-                predicate: nil
-            ) { _, completionHandler, error in
-                guard error == nil else {
-                    completionHandler()
-                    return
-                }
-
-                Task {
-                    await onStepsChanged()
+        guard observers.isEmpty else { return }
+        for descriptor in HealthMetricCatalog.observed {
+            let observer = HKObserverQuery(sampleType: descriptor.type, predicate: nil) {
+                _, completionHandler, error in
+                guard error == nil else { completionHandler(); return }
+                Task { @MainActor in
+                    switch descriptor.route {
+                    case .daily: await onStepsChanged()
+                    case .heartRate: await onHeartRateChanged()
+                    case .workouts: await onWorkoutsChanged()
+                    case .samples(let kind): await onSamplesChanged(kind)
+                    }
                     completionHandler()
                 }
             }
-
-            healthStore.execute(stepObserver)
+            observers.append(observer)
+            healthStore.execute(observer)
         }
-
-        if let heartRateType = HKObjectType.quantityType(
-            forIdentifier: .heartRate
-        ) {
-            let heartRateObserver = HKObserverQuery(
-                sampleType: heartRateType,
-                predicate: nil
-            ) { _, completionHandler, error in
-                guard error == nil else {
-                    completionHandler()
-                    return
-                }
-
-                Task {
-                    await onHeartRateChanged()
-                    completionHandler()
-                }
-            }
-
-            healthStore.execute(heartRateObserver)
-        }
-
-        let workoutObserver = HKObserverQuery(
-            sampleType: HKObjectType.workoutType(),
-            predicate: nil
-        ) { _, completionHandler, error in
-            guard error == nil else {
-                completionHandler()
-                return
-            }
-
-            Task {
-                await onWorkoutsChanged()
-                completionHandler()
-            }
-        }
-
-        healthStore.execute(workoutObserver)
     }
 
     func loadTodaySteps() async {

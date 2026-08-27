@@ -10,7 +10,7 @@ import Combine
 import HealthKit
 
 @MainActor
-final class SupabaseHealthSyncManager: ObservableObject {
+final class SupabaseHealthSyncManager: ObservableObject, HealthPageWriting {
     @Published var isSyncing = false
     @Published var syncMessage: String?
     @Published var errorMessage: String?
@@ -20,6 +20,50 @@ final class SupabaseHealthSyncManager: ObservableObject {
 
     private let publishableKey =
         "sb_publishable_IboCUET8TK_jL3TjcX1K5g_z7cZBnN0"
+
+    var ingestionBackendScope: String { supabaseURL }
+
+    func write(page: HealthSamplePage, kind: HealthSampleKind, userId: String) async throws {
+        let auth = SupabaseAuthManager.shared
+        guard HealthMetricCatalog.expandedImportEnabled else { throw HealthIngestionError.disabled }
+        guard auth.userId == userId, let token = auth.accessToken else {
+            throw HealthIngestionError.sessionChanged
+        }
+        guard let url = URL(string: supabaseURL + "/rest/v1/rpc/ingest_health_sample_page") else {
+            throw HealthIngestionError.invalidResponse
+        }
+        struct PagePayload: Encodable {
+            let p_metric_type: String
+            let p_samples: [HealthSampleRecord]
+            let p_deleted_ids: [UUID]
+        }
+        let encoder = JSONEncoder()
+        encoder.dateEncodingStrategy = .custom { date, encoder in
+            let formatter = ISO8601DateFormatter()
+            formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+            var container = encoder.singleValueContainer()
+            try container.encode(formatter.string(from: date))
+        }
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.timeoutInterval = 30
+        request.setValue(publishableKey, forHTTPHeaderField: "apikey")
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.httpBody = try encoder.encode(PagePayload(p_metric_type: kind.rawValue,
+            p_samples: page.samples, p_deleted_ids: page.deletedIds))
+        let (data, response) = try await URLSession.shared.data(for: request)
+        guard let response = response as? HTTPURLResponse else { throw HealthIngestionError.invalidResponse }
+        guard (200...299).contains(response.statusCode) else {
+            // Do not log payloads, JWTs or server details that may echo personal data.
+            throw HealthIngestionError.serverRejected(response.statusCode)
+        }
+        struct Acknowledgement: Decodable { let upserted: Int; let deleted: Int }
+        let acknowledgement = try JSONDecoder().decode(Acknowledgement.self, from: data)
+        guard acknowledgement.upserted >= 0, acknowledgement.deleted >= 0 else {
+            throw HealthIngestionError.invalidResponse
+        }
+    }
 
     func syncTodaySteps(
         steps: Double,

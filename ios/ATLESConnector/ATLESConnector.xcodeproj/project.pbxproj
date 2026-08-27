@@ -257,7 +257,8 @@
 				DEVELOPMENT_TEAM = 8MYWWLVLMX;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_NSHealthShareUsageDescription = "ATLES necessita accedir a les teves dades de salut per importar passos i entrenaments i mostrar-los al teu historial.";
+				INFOPLIST_KEY_ATLESHealthIngestionV2Enabled = NO;
+				INFOPLIST_KEY_NSHealthShareUsageDescription = "ATLES importa activitat, energia, pols, HRV, son, VO2max i mesures corporals que autoritzis per conservar el teu historial i habilitar analisi personal. Pots escollir cada tipus de dada a Salut.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -291,7 +292,8 @@
 				DEVELOPMENT_TEAM = 8MYWWLVLMX;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_NSHealthShareUsageDescription = "ATLES necessita accedir a les teves dades de salut per importar passos i entrenaments i mostrar-los al teu historial.";
+				INFOPLIST_KEY_ATLESHealthIngestionV2Enabled = NO;
+				INFOPLIST_KEY_NSHealthShareUsageDescription = "ATLES importa activitat, energia, pols, HRV, son, VO2max i mesures corporals que autoritzis per conservar el teu historial i habilitar analisi personal. Pots escollir cada tipus de dada a Salut.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;

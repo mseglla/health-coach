@@ -278,6 +278,17 @@ Demostrar amb dades reals que el flux `Apple Watch → Apple Health → connecto
 
 ## Fase 3 — Apple Health complet
 
+### Importació conjunta v2 — validada en local, pendent d'iPhone, 2026-08-27
+
+- Catàleg i motor compartit per a repòs, HRV, VO₂max, pes, greix, massa magra i son.
+- Migració additiva `health_samples` amb RLS i RPC de blocs idempotents amb tombstones.
+- Flag desactivat; cap migració remota ni canvi a la UI de la PWA.
+- Validat al Mac: suite Node, motor Swift, compilació Xcode per a simulador i SQL/RLS amb dos usuaris ficticis a Supabase LOCAL.
+- Pendent: variant del connector amb backend i sessió DEV separats i validació a l'iPhone abans d'activar la importació.
+- Contracte, límits i procediment: `docs/healthkit-ingestion-v2.md`.
+
+### Cobertura de la fase
+
 - [ ] Passos i distància.
 - [ ] Calories actives i en repòs.
 - [ ] Entrenaments.

@@ -20,6 +20,9 @@ final class BackgroundSyncCoordinator {
             },
             onWorkoutsChanged: { [weak self] in
                 await self?.syncWorkouts()
+            },
+            onSamplesChanged: { kind in
+                await HealthSampleIngestionCoordinator.shared.synchronize(kinds: [kind], maxPages: 4)
             }
         )
     }

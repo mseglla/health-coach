@@ -12,6 +12,7 @@ struct ContentView: View {
     @StateObject private var healthKit = HealthKitManager()
     @ObservedObject private var auth = SupabaseAuthManager.shared
     @StateObject private var sync = SupabaseHealthSyncManager()
+    @ObservedObject private var ingestion = HealthSampleIngestionCoordinator.shared
 
     @State private var email = ""
     @State private var password = ""
@@ -267,10 +268,33 @@ struct ContentView: View {
                     }
                 }
 
+                if HealthMetricCatalog.expandedImportEnabled && auth.isAuthenticated {
+                    Section("Importació ampliada · validació") {
+                        Button {
+                            Task { await ingestion.synchronize() }
+                        } label: {
+                            if ingestion.isSyncing { ProgressView() }
+                            else { Text("Importar / continuar dades ampliades") }
+                        }
+                        .disabled(ingestion.isSyncing || sync.isSyncing)
+                        ForEach(HealthSampleKind.allCases, id: \.rawValue) { kind in
+                            VStack(alignment: .leading) {
+                                Text(kind.label)
+                                Text(ingestion.statusByKind[kind] ?? "Encara no importat")
+                                    .font(.caption).foregroundStyle(.secondary)
+                            }
+                        }
+                        if let error = ingestion.errorMessage {
+                            Text(error).foregroundStyle(.red)
+                        }
+                    }
+                }
+
                 Section {
                     Button("Connectar Apple Health") {
                         Task {
                             await healthKit.requestAuthorization()
+                            await healthKit.enableBackgroundDelivery()
                         }
                     }
                 }
@@ -314,7 +338,9 @@ struct ContentView: View {
         }
         .task {
             await auth.restoreSession()
+            ingestion.resetStatusForSession()
         }
+        .onChange(of: auth.userId) { _, _ in ingestion.resetStatusForSession() }
     }
 
     private func workoutName(_ workout: HKWorkout) -> String {
